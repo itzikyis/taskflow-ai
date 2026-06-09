@@ -1,0 +1,43 @@
+# ---- .NET ----
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.nupkg
+*.snupkg
+launchSettings.json
+appsettings.*.local.json
+
+# ---- Node / pnpm ----
+node_modules/
+dist/
+.pnpm-store/
+pnpm-lock.yaml
+
+# ---- Vite / Vitest ----
+.vite/
+coverage/
+
+# ---- Playwright ----
+playwright-report/
+test-results/
+
+# ---- Docker ----
+.dockerignore
+
+# ---- Secrets ----
+.env
+.env.local
+.env.*.local
+*.pfx
+*.key
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.swp

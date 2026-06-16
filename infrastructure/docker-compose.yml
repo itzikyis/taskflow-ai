@@ -35,6 +35,8 @@ services:
       Jwt__Issuer: "taskflow-api"
       Jwt__Audience: "taskflow-client"
       Jwt__ExpiryMinutes: "60"
+      Anthropic__ApiKey: ""
+      Anthropic__Model: "claude-haiku-4-5-20251001"
     ports:
       - "5000:8080"
 

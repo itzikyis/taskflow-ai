@@ -10,6 +10,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Board> Boards => Set<Board>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

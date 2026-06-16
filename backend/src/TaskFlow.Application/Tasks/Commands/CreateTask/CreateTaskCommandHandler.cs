@@ -6,7 +6,7 @@ using TaskFlow.Domain.Entities;
 namespace TaskFlow.Application.Tasks.Commands.CreateTask;
 
 /// <summary>Handles <see cref="CreateTaskCommand"/>.</summary>
-internal sealed class CreateTaskCommandHandler(ITaskRepository taskRepository)
+public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository)
     : IRequestHandler<CreateTaskCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(

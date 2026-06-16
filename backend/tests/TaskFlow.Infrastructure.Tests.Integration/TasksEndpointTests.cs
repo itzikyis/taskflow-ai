@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TaskFlow.Domain.ValueObjects;
+using Xunit;
 
 namespace TaskFlow.Infrastructure.Tests.Integration;
 

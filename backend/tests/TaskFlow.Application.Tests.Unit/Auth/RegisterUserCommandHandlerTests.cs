@@ -1,4 +1,5 @@
-using FluentAssertions;
+﻿using FluentAssertions;
+using Xunit;
 using NSubstitute;
 using TaskFlow.Application.Auth.Commands.Register;
 using TaskFlow.Application.Interfaces;

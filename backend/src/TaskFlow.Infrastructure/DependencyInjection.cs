@@ -1,9 +1,13 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Infrastructure.Persistence;
 using TaskFlow.Infrastructure.Persistence.Repositories;
+using TaskFlow.Infrastructure.Services;
 
 namespace TaskFlow.Infrastructure;
 
@@ -23,6 +27,31 @@ public static class DependencyInjection
 
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+
+        // JWT authentication
+        var jwt = configuration.GetSection("Jwt");
+        var secretKey = jwt["SecretKey"]
+            ?? throw new InvalidOperationException("JWT SecretKey is not configured.");
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer           = true,
+                    ValidateAudience         = true,
+                    ValidateLifetime         = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer              = jwt["Issuer"]   ?? "taskflow-api",
+                    ValidAudience            = jwt["Audience"] ?? "taskflow-client",
+                    IssuerSigningKey         = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(secretKey)),
+                };
+            });
 
         return services;
     }

@@ -31,6 +31,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=taskflow;Username=postgres;Password=postgres"
+      Jwt__SecretKey: "TaskFlow_Dev_Secret_Key_Change_In_Production_32chars!"
+      Jwt__Issuer: "taskflow-api"
+      Jwt__Audience: "taskflow-client"
+      Jwt__ExpiryMinutes: "60"
     ports:
       - "5000:8080"
 

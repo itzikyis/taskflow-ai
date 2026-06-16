@@ -5,9 +5,10 @@ import { useUpdateProject } from '../hooks/useProjects';
 interface ProjectCardProps {
   project: Project;
   onDelete: () => void;
+  onOpenBoards: () => void;
 }
 
-export function ProjectCard({ project, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onDelete, onOpenBoards }: ProjectCardProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
@@ -66,6 +67,13 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <strong style={{ fontSize: '1rem' }}>{project.name}</strong>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            type="button"
+            onClick={onOpenBoards}
+            style={{ background: '#0066cc', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
+          >
+            Boards
+          </button>
           <button
             type="button"
             onClick={() => setEditing(true)}

@@ -26,7 +26,8 @@ internal sealed class GetTaskByIdQueryHandler(ITaskRepository taskRepository)
             task.AssignedToUserId,
             task.CreatedByUserId,
             task.CreatedAt,
-            task.UpdatedAt);
+            task.UpdatedAt,
+            task.ColumnId);
 
         return Result<TaskDto>.Success(dto);
     }

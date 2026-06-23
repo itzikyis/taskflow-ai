@@ -13,4 +13,5 @@ public sealed record TaskDto(
     Guid? AssignedToUserId,
     Guid CreatedByUserId,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    Guid? ColumnId);

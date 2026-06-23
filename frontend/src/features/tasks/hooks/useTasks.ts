@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
-import type { CreateTaskPayload, UpdateTaskPayload } from '../types/task.types';
+import type { CreateTaskPayload, UpdateTaskPayload, TaskStatus } from '../types/task.types';
 
 const TASKS_KEY = 'tasks' as const;
 
@@ -31,6 +31,23 @@ export function useUpdateTask(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateTaskPayload) => taskService.update(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
+  });
+}
+
+export function useMoveTaskToColumn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, columnId }: { taskId: string; columnId: string | null }) =>
+      taskService.moveToColumn(taskId, columnId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
+  });
+}
+
+export function useUpdateTaskStatus(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (status: TaskStatus) => taskService.updateStatus(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }

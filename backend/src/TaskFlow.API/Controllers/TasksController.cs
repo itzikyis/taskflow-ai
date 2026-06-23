@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
 using TaskFlow.Application.Tasks.Commands.UpdateTask;
+using TaskFlow.Application.Tasks.Commands.MoveTaskToColumn;
+using TaskFlow.Application.Tasks.Commands.UpdateTaskStatus;
 using TaskFlow.Application.Tasks.Queries.GetAllTasks;
 using TaskFlow.Application.Tasks.Queries.GetTaskById;
+using TaskFlow.Domain.Common;
 using TaskFlow.Domain.ValueObjects;
 
 namespace TaskFlow.API.Controllers;
@@ -72,6 +75,47 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         return result.IsFailure ? BadRequest(result.Error) : NoContent();
     }
 
+    /// <summary>Transitions a task to a new status.</summary>
+    [HttpPatch("{id:guid}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateStatus(
+        Guid id,
+        [FromBody] UpdateTaskStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(
+            new UpdateTaskStatusCommand(id, request.Status),
+            cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+        return NoContent();
+    }
+
+    /// <summary>Moves a task into a board column (pass null columnId to remove from board).</summary>
+    [HttpPatch("{id:guid}/column")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MoveToColumn(
+        Guid id,
+        [FromBody] MoveTaskToColumnRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new MoveTaskToColumnCommand(id, request.ColumnId), cancellationToken);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+        return NoContent();
+    }
+
     /// <summary>Deletes a task permanently.</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -96,3 +140,9 @@ public sealed record CreateTaskRequest(
 
 /// <summary>Payload for updating a task.</summary>
 public sealed record UpdateTaskRequest(string Title, string? Description);
+
+/// <summary>Payload for updating a task's status.</summary>
+public sealed record UpdateTaskStatusRequest(TaskItemStatus Status);
+
+/// <summary>Payload for moving a task to a board column.</summary>
+public sealed record MoveTaskToColumnRequest(Guid? ColumnId);

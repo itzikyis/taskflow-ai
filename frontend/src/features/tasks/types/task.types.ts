@@ -15,12 +15,14 @@ export interface Task {
   createdByUserId: string;
   createdAt: string;
   updatedAt: string | null;
+  columnId: string | null;
 }
 
 export interface CreateTaskPayload {
   title: string;
   description?: string;
   priority: TaskPriority;
+  dueDate?: string;
   createdByUserId: string;
 }
 

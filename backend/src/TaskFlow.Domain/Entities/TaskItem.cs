@@ -47,6 +47,9 @@ public sealed class TaskItem : AggregateRoot
     /// <summary>Gets the optional assigned user ID.</summary>
     public Guid? AssignedToUserId { get; private set; }
 
+    /// <summary>Gets the board column this task is placed in, or null if not on a board.</summary>
+    public Guid? ColumnId { get; private set; }
+
     /// <summary>Gets the ID of the user who created this task.</summary>
     public Guid CreatedByUserId { get; private init; }
 
@@ -116,6 +119,13 @@ public sealed class TaskItem : AggregateRoot
         Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok;
+    }
+
+    /// <summary>Places (or removes) the task in a board column.</summary>
+    public void MoveToColumn(Guid? columnId)
+    {
+        ColumnId = columnId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     private static bool IsValidTransition(TaskItemStatus from, TaskItemStatus to) =>

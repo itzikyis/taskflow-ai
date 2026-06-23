@@ -1,50 +1,73 @@
 import { useState } from 'react';
 import { useCreateProject } from '../hooks/useProjects';
+import { useAuthStore } from '@/store/authStore';
 
-// Temporary stub — replace with real auth context
-const STUB_OWNER_ID = '00000000-0000-0000-0000-000000000001';
+interface CreateProjectFormProps {
+  onClose: () => void;
+}
 
-export function CreateProjectForm() {
-  const [name, setName] = useState('');
+export function CreateProjectForm({ onClose }: CreateProjectFormProps) {
+  const [name, setName]               = useState('');
   const [description, setDescription] = useState('');
-  const createMutation = useCreateProject();
+  const createMutation                = useCreateProject();
+  const { token }                     = useAuthStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !token) return;
     createMutation.mutate(
-      { name: name.trim(), description: description.trim() || undefined, ownerId: STUB_OWNER_ID },
-      {
-        onSuccess: () => {
-          setName('');
-          setDescription('');
-        },
-      },
+      { name: name.trim(), description: description.trim() || undefined, ownerId: token.userId },
+      { onSuccess: onClose },
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="New project name…"
-        aria-label="Project name"
-        required
-        style={{ flex: '1 1 200px', padding: '0.5rem' }}
-      />
-      <input
-        type="text"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description (optional)"
-        aria-label="Project description"
-        style={{ flex: '2 1 250px', padding: '0.5rem' }}
-      />
-      <button type="submit" disabled={createMutation.isPending} style={{ padding: '0.5rem 1rem' }}>
-        {createMutation.isPending ? 'Creating…' : 'Add Project'}
-      </button>
-    </form>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box">
+        <h2 className="modal-title">New project</h2>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="form-group">
+            <label htmlFor="proj-name" className="form-label">Project name *</label>
+            <input
+              id="proj-name"
+              type="text"
+              className="tf-input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="My awesome project"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="proj-desc" className="form-label">Description</label>
+            <textarea
+              id="proj-desc"
+              className="tf-input"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="What is this project about?"
+              rows={3}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+            <button type="button" className="tf-btn tf-btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending || !name.trim()}
+              className="tf-btn tf-btn-primary"
+            >
+              {createMutation.isPending ? 'Creating…' : 'Create project'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

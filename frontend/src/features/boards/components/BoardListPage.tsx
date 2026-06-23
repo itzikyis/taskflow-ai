@@ -11,69 +11,118 @@ interface BoardListPageProps {
 export function BoardListPage({ projectId, projectName, onBack }: BoardListPageProps) {
   const { data: boards, isLoading } = useBoardsByProject(projectId);
   const createBoard = useCreateBoard();
-  const [newName, setNewName] = useState('');
-  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
+  const [newName, setNewName]         = useState('');
+  const [activeBoardId, setActiveId]  = useState<string | null>(null);
+  const [showForm, setShowForm]       = useState(false);
 
   if (activeBoardId) {
-    return <BoardView boardId={activeBoardId} onClose={() => setActiveBoardId(null)} />;
+    return <BoardView boardId={activeBoardId} onClose={() => setActiveId(null)} />;
   }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    createBoard.mutate({ name: newName.trim(), projectId }, { onSuccess: () => setNewName('') });
+    createBoard.mutate(
+      { name: newName.trim(), projectId },
+      { onSuccess: () => { setNewName(''); setShowForm(false); } },
+    );
   };
 
-  if (isLoading) return <p>Loading boards…</p>;
+  if (isLoading) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">⌛</div>
+      <p className="empty-state-text">Loading boards…</p>
+    </div>
+  );
 
   return (
-    <section>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+    <div>
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            className="tf-btn tf-btn-ghost tf-btn-sm"
+            onClick={onBack}
+            style={{ padding: '6px 10px' }}
+          >
+            ← Back
+          </button>
+          <div>
+            <h1 className="page-title">Boards</h1>
+            <p className="page-subtitle">{projectName}</p>
+          </div>
+        </div>
         <button
           type="button"
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0066cc', fontSize: '0.875rem' }}
+          className="tf-btn tf-btn-primary"
+          onClick={() => setShowForm(p => !p)}
         >
-          ← Projects
+          + New board
         </button>
-        <h2 style={{ margin: 0 }}>Boards — {projectName}</h2>
       </div>
 
-      <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <input
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          placeholder="New board name…"
-          style={{ flex: 1, padding: '0.5rem' }}
-        />
-        <button type="submit" disabled={createBoard.isPending} style={{ padding: '0.5rem 1rem' }}>
-          {createBoard.isPending ? 'Creating…' : 'Add Board'}
-        </button>
-      </form>
-
-      {boards?.length === 0 && <p>No boards yet. Create one above!</p>}
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-        {boards?.map(board => (
-          <button
-            key={board.id}
-            type="button"
-            onClick={() => setActiveBoardId(board.id)}
-            style={{
-              padding: '1rem 1.5rem',
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              background: '#fff',
-              cursor: 'pointer',
-              textAlign: 'left',
-              minWidth: 160,
-            }}
-          >
-            <strong style={{ display: 'block' }}>{board.name}</strong>
-            <span style={{ fontSize: '0.75rem', color: '#888' }}>{board.columns.length} columns</span>
+      {/* ── Create inline ────────────────────────────────────── */}
+      {showForm && (
+        <form
+          onSubmit={handleCreate}
+          style={{
+            display: 'flex', gap: 8, marginBottom: 20,
+            background: 'var(--surface-card)',
+            border: '1px solid var(--surface-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px',
+          }}
+        >
+          <input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="Board name…"
+            className="tf-input"
+            style={{ flex: 1 }}
+            autoFocus
+          />
+          <button type="submit" disabled={createBoard.isPending} className="tf-btn tf-btn-primary">
+            {createBoard.isPending ? 'Creating…' : 'Create'}
           </button>
-        ))}
-      </div>
-    </section>
+          <button type="button" className="tf-btn tf-btn-ghost" onClick={() => setShowForm(false)}>
+            Cancel
+          </button>
+        </form>
+      )}
+
+      {/* ── Board grid ───────────────────────────────────────── */}
+      {(!boards || boards.length === 0) ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">⬡</div>
+          <p className="empty-state-text">No boards yet. Create your first board!</p>
+        </div>
+      ) : (
+        <div className="board-grid">
+          {boards.map(board => (
+            <button
+              key={board.id}
+              type="button"
+              onClick={() => setActiveId(board.id)}
+              className="tf-card"
+              style={{
+                cursor: 'pointer', padding: '16px', textAlign: 'left',
+                border: 'none', width: '100%',
+                background: 'var(--surface-card)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}
+            >
+              <div style={{ fontSize: 24 }}>⬡</div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>
+                {board.name}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                {board.columns.length} column{board.columns.length !== 1 ? 's' : ''}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -6,7 +6,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const loginMutation = useLogin();
 
@@ -15,79 +15,70 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
     loginMutation.mutate({ email: email.trim(), password });
   };
 
-  const inputStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    padding: '0.6rem 0.75rem',
-    fontSize: '1rem',
-    border: '1px solid #ccc',
-    borderRadius: 6,
-    boxSizing: 'border-box',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    marginBottom: '0.25rem',
-    fontWeight: 500,
-    fontSize: '0.875rem',
-  };
-
   return (
-    <div style={{ maxWidth: 420, margin: '4rem auto', padding: '2rem', border: '1px solid #e5e5e5', borderRadius: 12 }}>
-      <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Sign in</h2>
+    <div className="auth-shell">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon">⚡</div>
+          <span className="auth-logo-text">TaskFlow AI</span>
+        </div>
 
-      {loginMutation.isError && (
-        <p role="alert" style={{ color: 'red', marginBottom: '1rem' }}>
-          Invalid email or password.
+        <h1 className="auth-title">Welcome back</h1>
+        <p className="auth-subtitle">Sign in to your workspace</p>
+
+        {loginMutation.isError && (
+          <p role="alert" className="form-error" style={{ marginBottom: 16 }}>
+            Invalid email or password. Please try again.
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="login-email" className="form-label">Email address</label>
+            <input
+              id="login-email"
+              type="email"
+              className="tf-input"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              required
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="login-password" className="form-label">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              className="tf-input"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loginMutation.isPending}
+            className="tf-btn tf-btn-primary"
+            style={{ width: '100%', justifyContent: 'center', padding: '10px 16px', fontSize: 15, marginTop: 4 }}
+          >
+            {loginMutation.isPending ? 'Signing in…' : 'Sign in →'}
+          </button>
+        </form>
+
+        <p className="auth-divider" style={{ marginTop: 20 }}>
+          Don't have an account?{' '}
+          <button type="button" className="auth-link" onClick={onSwitchToRegister}>
+            Create one
+          </button>
         </p>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div>
-          <label htmlFor="login-email" style={labelStyle}>Email</label>
-          <input
-            id="login-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            style={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="login-password" style={labelStyle}>Password</label>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            style={inputStyle}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loginMutation.isPending}
-          style={{ padding: '0.65rem', fontSize: '1rem', borderRadius: 6, border: 'none', background: '#0066cc', color: '#fff', cursor: 'pointer' }}
-        >
-          {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-
-      <p style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.875rem' }}>
-        Don't have an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToRegister}
-          style={{ background: 'none', border: 'none', color: '#0066cc', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
-        >
-          Register
-        </button>
-      </p>
+      </div>
     </div>
   );
 }

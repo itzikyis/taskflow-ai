@@ -11,52 +11,57 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function fileIcon(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase();
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext ?? '')) return '🖼';
+  if (['pdf'].includes(ext ?? '')) return '📄';
+  if (['zip', 'gz', 'tar'].includes(ext ?? '')) return '📦';
+  if (['mp4', 'mov', 'avi'].includes(ext ?? '')) return '🎥';
+  return '📎';
+}
+
 export function AttachmentList({ taskId, currentUserId }: AttachmentListProps) {
   const { data: attachments, isLoading } = useAttachmentsByTask(taskId);
   const deleteAttachment = useDeleteAttachment(taskId);
 
-  if (isLoading) return <p style={{ fontSize: '0.875rem', color: '#888' }}>Loading attachments…</p>;
-  if (!attachments?.length) return <p style={{ fontSize: '0.875rem', color: '#aaa' }}>No attachments.</p>;
+  if (isLoading) return <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Loading…</p>;
+
+  if (!attachments?.length) return (
+    <p style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 0' }}>No attachments yet.</p>
+  );
 
   return (
-    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+    <div>
       {attachments.map(a => (
-        <li
-          key={a.id}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '0.4rem 0',
-            borderBottom: '1px solid #f0f0f0',
-            fontSize: '0.875rem',
-          }}
-        >
-          <div>
+        <div key={a.id} className="attachment-item">
+          <span className="attachment-icon">{fileIcon(a.fileName)}</span>
+          <div className="attachment-info">
             <a
               href={a.storageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#0066cc', textDecoration: 'none' }}
+              className="attachment-name"
             >
               {a.fileName}
             </a>
-            <span style={{ color: '#aaa', marginLeft: '0.5rem', fontSize: '0.75rem' }}>
+            <div className="attachment-meta">
               {formatBytes(a.fileSizeBytes)} · {new Date(a.uploadedAt).toLocaleDateString()}
-            </span>
+            </div>
           </div>
           {a.uploadedBy === currentUserId && (
             <button
               type="button"
               onClick={() => deleteAttachment.mutate({ id: a.id, payload: { requesterId: currentUserId } })}
               disabled={deleteAttachment.isPending}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc0000', fontSize: '0.75rem' }}
+              className="tf-btn tf-btn-danger tf-btn-sm"
+              style={{ border: 'none', background: 'none', color: 'var(--text-muted)', padding: '2px 6px' }}
+              title="Delete attachment"
             >
-              Delete
+              ×
             </button>
           )}
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

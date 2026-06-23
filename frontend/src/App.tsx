@@ -6,70 +6,97 @@ import { RegisterPage } from '@/features/auth/components/RegisterPage';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuth';
 
-type Tab = 'tasks' | 'projects';
+type View = 'tasks' | 'projects';
 type AuthView = 'login' | 'register';
 
-const tabStyle = (active: boolean): React.CSSProperties => ({
-  padding: '0.5rem 1.25rem',
-  cursor: 'pointer',
-  border: 'none',
-  borderBottom: active ? '2px solid #0066cc' : '2px solid transparent',
-  background: 'none',
-  fontWeight: active ? 700 : 400,
-  color: active ? '#0066cc' : '#555',
-  fontSize: '1rem',
-});
+const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
+  { id: 'tasks',    icon: '✓',  label: 'My Tasks'  },
+  { id: 'projects', icon: '⬡',  label: 'Projects'  },
+];
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('tasks');
+  const [view, setView]         = useState<View>('tasks');
   const [authView, setAuthView] = useState<AuthView>('login');
   const { isAuthenticated, token } = useAuthStore();
   const logout = useLogout();
 
-  // ── Unauthenticated ──────────────────────────────────────────────────────
   if (!isAuthenticated) {
-    return (
-      <main style={{ fontFamily: 'system-ui, sans-serif' }}>
-        <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
-          <h1 style={{ color: '#0066cc' }}>TaskFlow AI</h1>
-        </div>
-        {authView === 'login'
-          ? <LoginPage onSwitchToRegister={() => setAuthView('register')} />
-          : <RegisterPage onSwitchToLogin={() => setAuthView('login')} />}
-      </main>
-    );
+    return authView === 'login'
+      ? <LoginPage    onSwitchToRegister={() => setAuthView('register')} />
+      : <RegisterPage onSwitchToLogin={()    => setAuthView('login')}    />;
   }
 
-  // ── Authenticated ────────────────────────────────────────────────────────
+  const initials = token?.displayName
+    ? token.displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem', maxWidth: 800, margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-        <h1 style={{ margin: 0 }}>TaskFlow AI</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
-          <span style={{ color: '#555' }}>
-            Hello, <strong>{token?.displayName}</strong>
-          </span>
+    <div className="app-shell">
+      {/* ── Sidebar ─────────────────────────────────────────────────── */}
+      <aside className="app-sidebar">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-mark">
+            <div className="sidebar-logo-icon">⚡</div>
+            <span className="sidebar-logo-text">TaskFlow AI</span>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          <div className="sidebar-section-label">Workspace</div>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              type="button"
+              className={`sidebar-nav-item${view === item.id ? ' active' : ''}`}
+              onClick={() => setView(item.id)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{token?.displayName}</div>
+              <div className="sidebar-user-email">{token?.email}</div>
+            </div>
+          </div>
           <button
             type="button"
             onClick={logout}
-            style={{ padding: '0.35rem 0.75rem', borderRadius: 6, border: '1px solid #ccc', background: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+            className="sidebar-nav-item"
+            style={{ marginTop: 8, paddingLeft: 0, paddingRight: 0, color: '#f87171' }}
           >
+            <span className="nav-icon">↪</span>
             Sign out
           </button>
         </div>
-      </header>
+      </aside>
 
-      <nav style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #eee', marginBottom: '1.5rem' }}>
-        <button style={tabStyle(tab === 'tasks')} onClick={() => setTab('tasks')}>
-          Tasks
-        </button>
-        <button style={tabStyle(tab === 'projects')} onClick={() => setTab('projects')}>
-          Projects
-        </button>
-      </nav>
+      {/* ── Main ────────────────────────────────────────────────────── */}
+      <div className="app-main">
+        <header className="app-topbar">
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+            {view === 'tasks' ? 'My Tasks' : 'Projects'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="sidebar-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
+              {initials}
+            </div>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
+              {token?.displayName}
+            </span>
+          </div>
+        </header>
 
-      {tab === 'tasks' && <TaskListPage />}
-      {tab === 'projects' && <ProjectListPage />}
-    </main>
+        <main className="app-content">
+          {view === 'tasks'    && <TaskListPage />}
+          {view === 'projects' && <ProjectListPage />}
+        </main>
+      </div>
+    </div>
   );
 }

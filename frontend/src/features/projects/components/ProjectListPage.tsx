@@ -8,9 +8,7 @@ export function ProjectListPage() {
   const { data: projects, isLoading, isError } = useProjects();
   const deleteMutation = useDeleteProject();
   const [activeProject, setActiveProject] = useState<{ id: string; name: string } | null>(null);
-
-  if (isLoading) return <p>Loading projects…</p>;
-  if (isError) return <p role="alert">Failed to load projects.</p>;
+  const [showCreate, setShowCreate]       = useState(false);
 
   if (activeProject) {
     return (
@@ -22,22 +20,61 @@ export function ProjectListPage() {
     );
   }
 
+  if (isLoading) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">⌛</div>
+      <p className="empty-state-text">Loading projects…</p>
+    </div>
+  );
+  if (isError) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">⚠️</div>
+      <p className="empty-state-text">Failed to load projects. Please refresh.</p>
+    </div>
+  );
+
   return (
-    <section>
-      <h2>Projects</h2>
-      <CreateProjectForm />
-      {projects?.length === 0 && <p>No projects yet. Create one above!</p>}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {projects?.map((project) => (
-          <li key={project.id}>
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Projects</h1>
+          <p className="page-subtitle">{projects?.length ?? 0} projects</p>
+        </div>
+        <button
+          type="button"
+          className="tf-btn tf-btn-primary"
+          onClick={() => setShowCreate(true)}
+        >
+          + New project
+        </button>
+      </div>
+
+      {(!projects || projects.length === 0) ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📁</div>
+          <p className="empty-state-text">No projects yet. Create your first one!</p>
+          <button
+            type="button"
+            className="tf-btn tf-btn-primary"
+            onClick={() => setShowCreate(true)}
+          >
+            + New project
+          </button>
+        </div>
+      ) : (
+        <div className="project-grid">
+          {projects.map(project => (
             <ProjectCard
+              key={project.id}
               project={project}
               onDelete={() => deleteMutation.mutate(project.id)}
               onOpenBoards={() => setActiveProject({ id: project.id, name: project.name })}
             />
-          </li>
-        ))}
-      </ul>
-    </section>
+          ))}
+        </div>
+      )}
+
+      {showCreate && <CreateProjectForm onClose={() => setShowCreate(false)} />}
+    </div>
   );
 }

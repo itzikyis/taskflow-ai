@@ -14,7 +14,6 @@ public sealed class AddColumnCommandHandler(IBoardRepository repo)
         if (board is null) return Result<Guid>.Failure(BoardErrors.NotFound);
         var result = board.AddColumn(request.Name, request.Order, request.WipLimit);
         if (result.IsFailure) return Result<Guid>.Failure(result.Error);
-        repo.Update(board);
         await repo.SaveChangesAsync(ct);
         return Result<Guid>.Success(result.Value!.Id);
     }

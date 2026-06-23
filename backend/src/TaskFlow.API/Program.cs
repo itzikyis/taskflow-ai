@@ -2,6 +2,10 @@ using TaskFlow.Application;
 using TaskFlow.Infrastructure;
 using TaskFlow.API.Middleware;
 
+// Npgsql 6+ requires UTC DateTimes for timestamptz columns; this switch restores
+// the pre-6 behavior so existing DateTime fields (Kind=Unspecified) are accepted.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();

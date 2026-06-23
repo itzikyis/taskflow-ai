@@ -21,13 +21,17 @@ internal sealed class BoardConfiguration : IEntityTypeConfiguration<Board>
         builder.OwnsMany(b => b.Columns, col =>
         {
             col.ToTable("board_columns");
-            col.WithOwner().HasForeignKey("board_id");
+            col.WithOwner().HasForeignKey(c => c.BoardId);
             col.HasKey(c => c.Id);
-            col.Property(c => c.Id).HasColumnName("id");
+            col.Property(c => c.Id).HasColumnName("id").ValueGeneratedNever();
             col.Property(c => c.BoardId).HasColumnName("board_id");
             col.Property(c => c.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
             col.Property(c => c.Order).HasColumnName("ord").IsRequired();
             col.Property(c => c.WipLimit).HasColumnName("wip_limit");
         });
+
+        builder.Navigation(b => b.Columns)
+               .HasField("_columns")
+               .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

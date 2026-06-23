@@ -8,10 +8,13 @@ namespace TaskFlow.Infrastructure.Persistence.Repositories;
 internal sealed class BoardRepository(ApplicationDbContext context) : IBoardRepository
 {
     public Task<Board?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        context.Boards.FirstOrDefaultAsync(b => b.Id == id, ct);
+        context.Boards
+               .Include(b => b.Columns)
+               .FirstOrDefaultAsync(b => b.Id == id, ct);
 
     public async Task<IReadOnlyList<Board>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default) =>
         await context.Boards
+                     .Include(b => b.Columns)
                      .Where(b => b.ProjectId == projectId)
                      .OrderByDescending(b => b.CreatedAt)
                      .ToListAsync(ct);

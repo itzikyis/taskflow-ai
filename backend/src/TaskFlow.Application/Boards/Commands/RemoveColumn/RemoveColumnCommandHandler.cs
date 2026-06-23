@@ -14,7 +14,6 @@ public sealed class RemoveColumnCommandHandler(IBoardRepository repo)
         if (board is null) return Result.Failure(BoardErrors.NotFound);
         var result = board.RemoveColumn(request.ColumnId);
         if (result.IsFailure) return result;
-        repo.Update(board);
         await repo.SaveChangesAsync(ct);
         return Result.Ok;
     }

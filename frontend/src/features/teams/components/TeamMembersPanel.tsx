@@ -2,6 +2,9 @@ import { useState } from 'react';
 import type { Team, TeamRole } from '../types/team.types';
 import { TEAM_ROLES } from '../types/team.types';
 import { useAddMember, useRemoveMember, useUpdateMemberRole } from '../hooks/useTeams';
+import { useAuthStore } from '@/store/authStore';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface TeamMembersPanelProps {
   team: Team;
@@ -17,16 +20,24 @@ export function TeamMembersPanel({ team }: TeamMembersPanelProps) {
   const [newUserId, setNewUserId]   = useState('');
   const [newRole, setNewRole]       = useState<TeamRole>('Member');
   const [hoveredId, setHoveredId]   = useState<string | null>(null);
+  const [uuidError, setUuidError]   = useState('');
 
+  const { token } = useAuthStore();
   const addMember        = useAddMember(team.id);
   const removeMember     = useRemoveMember(team.id);
   const updateMemberRole = useUpdateMemberRole(team.id);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserId.trim()) return;
+    const id = newUserId.trim();
+    if (!id) return;
+    if (!UUID_REGEX.test(id)) {
+      setUuidError('Must be a valid UUID (e.g. paste a user ID from the profile)');
+      return;
+    }
+    setUuidError('');
     addMember.mutate(
-      { userId: newUserId.trim(), role: newRole },
+      { userId: id, role: newRole },
       { onSuccess: () => { setNewUserId(''); setNewRole('Member'); } },
     );
   };
@@ -99,32 +110,48 @@ export function TeamMembersPanel({ team }: TeamMembersPanelProps) {
         })}
       </div>
 
-      <form onSubmit={handleAdd} style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-        <input
-          className="tf-input"
-          type="text"
-          value={newUserId}
-          onChange={e => setNewUserId(e.target.value)}
-          placeholder="User ID"
-          style={{ fontSize: 13, flex: 1 }}
-        />
-        <select
-          className="tf-input"
-          value={newRole}
-          onChange={e => setNewRole(e.target.value as TeamRole)}
-          style={{ fontSize: 13, width: 90 }}
-        >
-          {TEAM_ROLES.map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="tf-btn tf-btn-primary tf-btn-sm"
-          disabled={addMember.isPending || !newUserId.trim()}
-        >
-          Add
-        </button>
+      <form onSubmit={handleAdd} style={{ marginTop: 10 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            className="tf-input"
+            type="text"
+            value={newUserId}
+            onChange={e => { setNewUserId(e.target.value); setUuidError(''); }}
+            placeholder="Paste user UUID…"
+            style={{ fontSize: 13, flex: 1, borderColor: uuidError ? 'var(--color-danger)' : undefined }}
+          />
+          {token?.userId && (
+            <button
+              type="button"
+              className="tf-btn tf-btn-ghost tf-btn-sm"
+              title="Copy your own user ID"
+              onClick={() => { setNewUserId(token.userId); setUuidError(''); }}
+              style={{ flexShrink: 0, fontSize: 11 }}
+            >
+              My ID
+            </button>
+          )}
+          <select
+            className="tf-input"
+            value={newRole}
+            onChange={e => setNewRole(e.target.value as TeamRole)}
+            style={{ fontSize: 13, width: 90 }}
+          >
+            {TEAM_ROLES.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="tf-btn tf-btn-primary tf-btn-sm"
+            disabled={addMember.isPending || !newUserId.trim()}
+          >
+            {addMember.isPending ? '…' : 'Add'}
+          </button>
+        </div>
+        {uuidError && (
+          <p style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 4 }}>{uuidError}</p>
+        )}
       </form>
     </div>
   );

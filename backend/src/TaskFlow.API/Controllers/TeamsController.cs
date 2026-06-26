@@ -73,8 +73,11 @@ public sealed class TeamsController(IMediator mediator) : ControllerBase
         [FromBody] AddMemberRequest request,
         CancellationToken cancellationToken)
     {
+        if (!Guid.TryParse(request.UserId, out var userId))
+            return BadRequest(new { error = "UserId must be a valid UUID." });
+
         var result = await mediator.Send(
-            new AddMemberCommand(id, request.UserId, request.Role),
+            new AddMemberCommand(id, userId, request.Role),
             cancellationToken);
 
         if (result.IsFailure)
@@ -140,7 +143,7 @@ public sealed class TeamsController(IMediator mediator) : ControllerBase
 public sealed record CreateTeamRequest(string Name, string? Description);
 
 /// <summary>Payload for adding a team member.</summary>
-public sealed record AddMemberRequest(Guid UserId, TeamRole Role);
+public sealed record AddMemberRequest(string UserId, TeamRole Role);
 
 /// <summary>Payload for updating a team member's role.</summary>
 public sealed record UpdateMemberRoleRequest(TeamRole Role);

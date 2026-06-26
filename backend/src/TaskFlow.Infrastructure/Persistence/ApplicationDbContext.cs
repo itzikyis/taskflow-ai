@@ -13,6 +13,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Board> Boards => Set<Board>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

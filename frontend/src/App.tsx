@@ -5,6 +5,7 @@ import { LoginPage } from '@/features/auth/components/LoginPage';
 import { RegisterPage } from '@/features/auth/components/RegisterPage';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuth';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
 type View = 'tasks' | 'projects';
 type AuthView = 'login' | 'register';
@@ -83,6 +84,7 @@ export default function App() {
             {view === 'tasks' ? 'My Tasks' : 'Projects'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <NotificationBell />
             <div className="sidebar-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
               {initials}
             </div>

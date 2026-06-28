@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { TaskListPage } from '@/features/tasks/components/TaskListPage';
 import { ProjectListPage } from '@/features/projects/components/ProjectListPage';
+import { TeamListPage } from '@/features/teams/components/TeamListPage';
 import { LoginPage } from '@/features/auth/components/LoginPage';
 import { RegisterPage } from '@/features/auth/components/RegisterPage';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
-type View = 'tasks' | 'projects';
+type View = 'tasks' | 'projects' | 'teams';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'tasks',    icon: '✓',  label: 'My Tasks'  },
   { id: 'projects', icon: '⬡',  label: 'Projects'  },
+  { id: 'teams',    icon: '👥', label: 'Teams'     },
 ];
 
 export default function App() {
@@ -81,7 +83,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : 'Projects'}
+            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : 'Teams'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -97,6 +99,7 @@ export default function App() {
         <main className="app-content">
           {view === 'tasks'    && <TaskListPage />}
           {view === 'projects' && <ProjectListPage />}
+          {view === 'teams'    && <TeamListPage />}
         </main>
       </div>
     </div>

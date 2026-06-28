@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtService, JwtService>();

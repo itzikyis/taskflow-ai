@@ -8,8 +8,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { ActivityPage } from '@/features/activity/components/ActivityPage';
+import { AuditPage } from '@/features/audit/components/AuditPage';
 
-type View = 'tasks' | 'projects' | 'teams' | 'activity';
+type View = 'tasks' | 'projects' | 'teams' | 'activity' | 'audit';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -17,6 +18,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'projects', icon: '⬡',  label: 'Projects'  },
   { id: 'teams',    icon: '👥', label: 'Teams'     },
   { id: 'activity', icon: '📋', label: 'Activity'  },
+  { id: 'audit',    icon: '🛡️', label: 'Audit Trail' },
 ];
 
 export default function App() {
@@ -85,7 +87,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : 'Activity Log'}
+            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : 'Audit Trail'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -103,6 +105,7 @@ export default function App() {
           {view === 'projects' && <ProjectListPage />}
           {view === 'teams'    && <TeamListPage />}
           {view === 'activity' && <ActivityPage />}
+          {view === 'audit'    && <AuditPage />}
         </main>
       </div>
     </div>

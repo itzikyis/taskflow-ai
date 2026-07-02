@@ -14,7 +14,7 @@ COPY tests/TaskFlow.Infrastructure.Tests.Integration/TaskFlow.Infrastructure.Tes
 RUN dotnet restore
 
 COPY . .
-RUN dotnet publish src/TaskFlow.API/TaskFlow.API.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/TaskFlow.API/TaskFlow.API.csproj -c Release -o /app/publish
 
 # ---- runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

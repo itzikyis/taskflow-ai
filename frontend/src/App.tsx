@@ -10,8 +10,9 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { ActivityPage } from '@/features/activity/components/ActivityPage';
 import { AuditPage } from '@/features/audit/components/AuditPage';
 import { SprintPlannerPage } from '@/features/ai/components/SprintPlannerPage';
+import { ReleaseNotesPage } from '@/features/ai/components/ReleaseNotesPage';
 
-type View = 'tasks' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner';
+type View = 'tasks' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -21,6 +22,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'activity', icon: '📋', label: 'Activity'  },
   { id: 'audit',          icon: '🛡️', label: 'Audit Trail'   },
   { id: 'sprint-planner', icon: '🗓️', label: 'Sprint Planner' },
+  { id: 'release-notes', icon: '📝', label: 'Release Notes' },
 ];
 
 export default function App() {
@@ -89,7 +91,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : 'Sprint Planner'}
+            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : 'Release Notes'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -109,6 +111,7 @@ export default function App() {
           {view === 'activity' && <ActivityPage />}
           {view === 'audit'          && <AuditPage />}
           {view === 'sprint-planner' && <SprintPlannerPage />}
+          {view === 'release-notes'  && <ReleaseNotesPage />}
         </main>
       </div>
     </div>

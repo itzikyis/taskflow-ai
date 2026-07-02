@@ -27,6 +27,18 @@ export function useEstimateStoryPoints() {
   });
 }
 
+export function useGenerateReleaseNotes() {
+  return useMutation({
+    mutationFn: ({
+      version,
+      completedTasks,
+    }: {
+      version: string;
+      completedTasks: Array<{ title: string; description?: string; priority: string }>;
+    }) => aiService.generateReleaseNotes(version, completedTasks),
+  });
+}
+
 export function useSuggestSprintPlan() {
   return useMutation({
     mutationFn: ({

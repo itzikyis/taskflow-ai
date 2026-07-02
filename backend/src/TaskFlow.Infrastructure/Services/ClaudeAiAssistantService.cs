@@ -132,6 +132,65 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<ReleaseNotes> GenerateReleaseNotesAsync(
+        string version,
+        IEnumerable<(string Title, string? Description, string Priority)> completedTasks,
+        CancellationToken ct)
+    {
+        var taskList = completedTasks.ToList();
+        var tasksSummary = string.Join("\n", taskList.Select(t =>
+            $"- [{t.Priority}] {t.Title}: {t.Description ?? "No description"}"));
+
+        var prompt =
+            $"You are a technical writer generating release notes for version {version}.\n" +
+            "Based on the following completed tasks, generate professional release notes.\n\n" +
+            $"Completed Tasks:\n{tasksSummary}\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown code blocks, raw JSON only):\n" +
+            "{\n" +
+            $"  \"version\": \"{version}\",\n" +
+            "  \"summary\": \"A 1-2 sentence overview of this release\",\n" +
+            "  \"features\": [\"Feature 1 description\", \"Feature 2 description\"],\n" +
+            "  \"bugFixes\": [\"Bug fix 1\", \"Bug fix 2\"],\n" +
+            "  \"improvements\": [\"Improvement 1\"],\n" +
+            $"  \"markdownContent\": \"# Release Notes v{version}\\n\\n## Summary\\n...\\n\\n## New Features\\n- ...\\n\\n## Bug Fixes\\n- ...\"\n" +
+            "}\n\n" +
+            "Categorize each task as a feature, bug fix, or improvement based on context.\n" +
+            "If there are no items in a category, use an empty array.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1024);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<ReleaseNotesResponse>(raw, options);
+            if (response is null) return FallbackReleaseNotes(version);
+
+            return new ReleaseNotes(
+                response.Version ?? version,
+                response.Summary ?? string.Empty,
+                response.Features ?? [],
+                response.BugFixes ?? [],
+                response.Improvements ?? [],
+                response.MarkdownContent ?? string.Empty);
+        }
+        catch
+        {
+            return FallbackReleaseNotes(version);
+        }
+    }
+
+    private static ReleaseNotes FallbackReleaseNotes(string version) =>
+        new(version, "Unable to generate release notes.", [], [], [], "AI service returned an unparseable response.");
+
+    private sealed record ReleaseNotesResponse(
+        string? Version,
+        string? Summary,
+        List<string>? Features,
+        List<string>? BugFixes,
+        List<string>? Improvements,
+        string? MarkdownContent);
+
     private static SprintPlan FallbackPlan() =>
         new("Unable to generate plan", [], "AI service returned an unparseable response.");
 

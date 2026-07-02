@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+export interface ReleaseNotes {
+  version: string;
+  summary: string;
+  features: string[];
+  bugFixes: string[];
+  improvements: string[];
+  markdownContent: string;
+}
+
 export interface AiSuggestion {
   suggestion: string;
 }
@@ -24,6 +33,13 @@ export const aiService = {
   },
   estimateStoryPoints: async (title: string, description?: string): Promise<StoryPointEstimate> => {
     const { data } = await axios.post<StoryPointEstimate>('/api/ai/story-points', { title, description });
+    return data;
+  },
+  generateReleaseNotes: async (
+    version: string,
+    completedTasks: Array<{ title: string; description?: string; priority: string }>,
+  ): Promise<ReleaseNotes> => {
+    const { data } = await axios.post<ReleaseNotes>('/api/ai/release-notes', { version, completedTasks });
     return data;
   },
   suggestSprintPlan: async (

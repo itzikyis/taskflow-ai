@@ -4,6 +4,7 @@ using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
+using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
 using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
@@ -62,6 +63,22 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
     }
 
+    /// <summary>Generates AI release notes from a list of completed tasks.</summary>
+    [HttpPost("release-notes")]
+    [ProducesResponseType(typeof(ReleaseNotes), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GenerateReleaseNotes(
+        [FromBody] GenerateReleaseNotesRequest request,
+        CancellationToken ct)
+    {
+        var completedTasks = request.CompletedTasks
+            .Select(t => new CompletedTaskSummary(t.Title, t.Description, t.Priority))
+            .ToList();
+
+        var result = await mediator.Send(new GenerateReleaseNotesQuery(request.Version, completedTasks), ct);
+        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+    }
+
     /// <summary>Estimates story points for a task using the Fibonacci scale.</summary>
     [HttpPost("story-points")]
     [ProducesResponseType(typeof(StoryPointEstimate), StatusCodes.Status200OK)]
@@ -94,3 +111,9 @@ public sealed record SprintPlanRequest(IReadOnlyList<TaskSummaryRequest> Backlog
 
 /// <summary>A single task in the sprint-plan request backlog.</summary>
 public sealed record TaskSummaryRequest(string Id, string Title, string? Description, string Priority, string Status);
+
+/// <summary>Payload for the release-notes generation endpoint.</summary>
+public sealed record GenerateReleaseNotesRequest(string Version, IReadOnlyList<CompletedTaskSummaryRequest> CompletedTasks);
+
+/// <summary>A single completed task entry in the release-notes request.</summary>
+public sealed record CompletedTaskSummaryRequest(string Title, string? Description, string Priority);

@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using MediatR;
 using Xunit;
 using NSubstitute;
 using TaskFlow.Application.Interfaces;
@@ -11,11 +12,12 @@ namespace TaskFlow.Application.Tests.Unit.Tasks;
 public sealed class CreateTaskCommandHandlerTests
 {
     private readonly ITaskRepository _repository = Substitute.For<ITaskRepository>();
+    private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly CreateTaskCommandHandler _sut;
 
     public CreateTaskCommandHandlerTests()
     {
-        _sut = new CreateTaskCommandHandler(_repository);
+        _sut = new CreateTaskCommandHandler(_repository, _mediator);
     }
 
     [Fact]

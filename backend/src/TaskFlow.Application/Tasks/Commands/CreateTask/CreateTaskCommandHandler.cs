@@ -1,5 +1,6 @@
 using MediatR;
 using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
+using TaskFlow.Application.AuditTrail.Commands.RecordAudit;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
 using TaskFlow.Domain.Entities;
@@ -41,6 +42,20 @@ public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository, IMe
         catch
         {
             // Logging failure must never break the main operation.
+        }
+
+        try
+        {
+            await mediator.Send(new RecordAuditCommand(
+                request.CreatedByUserId,
+                "Task",
+                taskResult.Value!.Id,
+                "Created"),
+                cancellationToken);
+        }
+        catch
+        {
+            // Audit failure must never break the main operation.
         }
 
         return Result<Guid>.Success(taskResult.Value!.Id);

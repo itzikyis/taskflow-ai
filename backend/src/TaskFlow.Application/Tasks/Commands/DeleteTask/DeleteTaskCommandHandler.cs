@@ -1,5 +1,6 @@
 using MediatR;
 using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
+using TaskFlow.Application.AuditTrail.Commands.RecordAudit;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
 using TaskFlow.Domain.ValueObjects;
@@ -34,6 +35,20 @@ internal sealed class DeleteTaskCommandHandler(ITaskRepository taskRepository, I
         catch
         {
             // Logging failure must never break the main operation.
+        }
+
+        try
+        {
+            await mediator.Send(new RecordAuditCommand(
+                request.ActorId,
+                "Task",
+                request.TaskId,
+                "Deleted"),
+                cancellationToken);
+        }
+        catch
+        {
+            // Audit failure must never break the main operation.
         }
 
         return Result.Ok;

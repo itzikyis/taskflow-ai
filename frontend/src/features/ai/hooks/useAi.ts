@@ -26,3 +26,15 @@ export function useEstimateStoryPoints() {
       aiService.estimateStoryPoints(title, description),
   });
 }
+
+export function useSuggestSprintPlan() {
+  return useMutation({
+    mutationFn: ({
+      backlog,
+      sprintCapacity,
+    }: {
+      backlog: Array<{ id: string; title: string; description?: string; priority: string; status: string }>;
+      sprintCapacity?: number;
+    }) => aiService.suggestSprintPlan(backlog, sprintCapacity),
+  });
+}

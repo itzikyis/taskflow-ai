@@ -16,4 +16,10 @@ public interface IAiAssistantService
 
     /// <summary>Estimates story points for a task using Fibonacci scale (1, 2, 3, 5, 8, 13).</summary>
     Task<StoryPointEstimate> EstimateStoryPointsAsync(string title, string? description, CancellationToken ct = default);
+
+    /// <summary>Suggests a sprint plan from a backlog of tasks.</summary>
+    Task<SprintPlan> SuggestSprintPlanAsync(
+        IEnumerable<(Guid Id, string Title, string? Description, string Priority, string Status)> backlog,
+        int sprintCapacity,
+        CancellationToken ct = default);
 }

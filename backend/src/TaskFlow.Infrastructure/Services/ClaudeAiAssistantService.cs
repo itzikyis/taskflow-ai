@@ -84,12 +84,74 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
         return new StoryPointEstimate(points, reasoning);
     }
 
-    private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct)
+    /// <inheritdoc/>
+    public async Task<SprintPlan> SuggestSprintPlanAsync(
+        IEnumerable<(Guid Id, string Title, string? Description, string Priority, string Status)> backlog,
+        int sprintCapacity,
+        CancellationToken ct)
+    {
+        var backlogList = backlog.ToList();
+        var backlogSummary = string.Join("\n", backlogList.Select(t =>
+            $"- [{t.Priority}] (id:{t.Id}) {t.Title}: {t.Description ?? "No description"}"));
+
+        var prompt =
+            $"You are an agile sprint planning assistant. Given a backlog of tasks and a team capacity of {sprintCapacity} story points, suggest an optimal sprint plan.\n\n" +
+            $"Backlog:\n{backlogSummary}\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, no extra text):\n" +
+            "{\n" +
+            "  \"sprintGoal\": \"...\",\n" +
+            "  \"suggestedTasks\": [\n" +
+            "    { \"taskId\": \"...\", \"title\": \"...\", \"estimatedPoints\": 3, \"justification\": \"...\" }\n" +
+            "  ],\n" +
+            "  \"reasoning\": \"...\"\n" +
+            "}\n\n" +
+            $"Choose tasks that: (1) have high priority, (2) fit within {sprintCapacity} total story points, (3) form a coherent sprint goal. Valid point values: 1,2,3,5,8,13.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1024);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<SprintPlanResponse>(raw, options);
+            if (response is null) return FallbackPlan();
+
+            var tasks = (response.SuggestedTasks ?? []).Select(t => new SprintTaskSuggestion(
+                Guid.TryParse(t.TaskId, out var guid) ? guid : Guid.Empty,
+                t.Title ?? string.Empty,
+                t.EstimatedPoints,
+                t.Justification ?? string.Empty)).ToList();
+
+            return new SprintPlan(
+                response.SprintGoal ?? "No goal specified",
+                tasks,
+                response.Reasoning ?? string.Empty);
+        }
+        catch
+        {
+            return FallbackPlan();
+        }
+    }
+
+    private static SprintPlan FallbackPlan() =>
+        new("Unable to generate plan", [], "AI service returned an unparseable response.");
+
+    private sealed record SprintPlanResponse(
+        string? SprintGoal,
+        List<SprintTaskSuggestionResponse>? SuggestedTasks,
+        string? Reasoning);
+
+    private sealed record SprintTaskSuggestionResponse(
+        string? TaskId,
+        string? Title,
+        int EstimatedPoints,
+        string? Justification);
+
+    private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct, int maxTokens = 512)
     {
         var body = JsonSerializer.Serialize(new
         {
             model = _model,
-            max_tokens = 512,
+            max_tokens = maxTokens,
             messages = new[] { new { role = "user", content = prompt } }
         });
 

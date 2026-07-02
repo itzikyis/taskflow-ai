@@ -4,6 +4,7 @@ using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
+using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 
@@ -44,6 +45,23 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
 
+    /// <summary>Suggests an AI-generated sprint plan from a list of backlog tasks.</summary>
+    [HttpPost("sprint-plan")]
+    [ProducesResponseType(typeof(SprintPlan), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SuggestSprintPlan(
+        [FromBody] SprintPlanRequest request,
+        CancellationToken ct)
+    {
+        var backlog = request.Backlog
+            .Where(t => Guid.TryParse(t.Id, out _))
+            .Select(t => new TaskSummary(Guid.Parse(t.Id), t.Title, t.Description, t.Priority, t.Status))
+            .ToList();
+
+        var result = await mediator.Send(new SuggestSprintPlanQuery(backlog, request.SprintCapacity), ct);
+        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+    }
+
     /// <summary>Estimates story points for a task using the Fibonacci scale.</summary>
     [HttpPost("story-points")]
     [ProducesResponseType(typeof(StoryPointEstimate), StatusCodes.Status200OK)]
@@ -70,3 +88,9 @@ public sealed record SummarizeCommentsRequest(IReadOnlyList<string> Comments);
 
 /// <summary>Payload for story-points estimation endpoint.</summary>
 public sealed record EstimateStoryPointsRequest(string Title, string? Description);
+
+/// <summary>Payload for sprint-plan endpoint.</summary>
+public sealed record SprintPlanRequest(IReadOnlyList<TaskSummaryRequest> Backlog, int SprintCapacity = 40);
+
+/// <summary>A single task in the sprint-plan request backlog.</summary>
+public sealed record TaskSummaryRequest(string Id, string Title, string? Description, string Priority, string Status);

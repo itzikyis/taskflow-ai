@@ -4,6 +4,7 @@ import { useUpdateTaskStatus, useUpdateTask } from '../hooks/useTasks';
 import { CommentThread } from '@/features/comments/components/CommentThread';
 import { AttachmentList } from '@/features/attachments/components/AttachmentList';
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
+import { StoryPointEstimator } from './StoryPointEstimator';
 import { useAuthStore } from '@/store/authStore';
 
 interface TaskCardProps {
@@ -273,6 +274,15 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
                 taskTitle={task.title}
                 onAccept={(s) => { navigator.clipboard?.writeText(s); toggle('ai'); }}
               />
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e9d5ff' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Story Points
+                </p>
+                <StoryPointEstimator
+                  taskTitle={task.title}
+                  taskDescription={task.description ?? undefined}
+                />
+              </div>
             </>
           )}
         </div>

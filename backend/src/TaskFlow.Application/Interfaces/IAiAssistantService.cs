@@ -1,3 +1,5 @@
+using TaskFlow.Application.AI;
+
 namespace TaskFlow.Application.Interfaces;
 
 /// <summary>Contract for AI-assisted features.</summary>
@@ -11,4 +13,7 @@ public interface IAiAssistantService
 
     /// <summary>Summarizes a list of comments into a concise paragraph.</summary>
     Task<string> SummarizeCommentsAsync(IEnumerable<string> comments, CancellationToken ct = default);
+
+    /// <summary>Estimates story points for a task using Fibonacci scale (1, 2, 3, 5, 8, 13).</summary>
+    Task<StoryPointEstimate> EstimateStoryPointsAsync(string title, string? description, CancellationToken ct = default);
 }

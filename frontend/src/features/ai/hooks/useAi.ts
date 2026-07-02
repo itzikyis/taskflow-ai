@@ -19,3 +19,10 @@ export function useSummarizeComments() {
     mutationFn: (comments: string[]) => aiService.summarizeComments(comments),
   });
 }
+
+export function useEstimateStoryPoints() {
+  return useMutation({
+    mutationFn: ({ title, description }: { title: string; description?: string }) =>
+      aiService.estimateStoryPoints(title, description),
+  });
+}

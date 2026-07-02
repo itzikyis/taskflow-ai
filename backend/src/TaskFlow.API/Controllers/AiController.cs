@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
+using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
@@ -41,6 +43,20 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new SummarizeCommentsQuery(request.Comments), ct);
         return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Estimates story points for a task using the Fibonacci scale.</summary>
+    [HttpPost("story-points")]
+    [ProducesResponseType(typeof(StoryPointEstimate), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> EstimateStoryPoints(
+        [FromBody] EstimateStoryPointsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(
+            new EstimateStoryPointsQuery(request.Title, request.Description),
+            cancellationToken);
+        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -51,3 +67,6 @@ public sealed record SuggestDueDateRequest(string TaskTitle, string? TaskDescrip
 
 /// <summary>Payload for summarize-comments endpoint.</summary>
 public sealed record SummarizeCommentsRequest(IReadOnlyList<string> Comments);
+
+/// <summary>Payload for story-points estimation endpoint.</summary>
+public sealed record EstimateStoryPointsRequest(string Title, string? Description);

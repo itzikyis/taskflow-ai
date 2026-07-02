@@ -22,4 +22,10 @@ public interface IAiAssistantService
         IEnumerable<(Guid Id, string Title, string? Description, string Priority, string Status)> backlog,
         int sprintCapacity,
         CancellationToken ct = default);
+
+    /// <summary>Generates release notes from a list of completed tasks.</summary>
+    Task<ReleaseNotes> GenerateReleaseNotesAsync(
+        string version,
+        IEnumerable<(string Title, string? Description, string Priority)> completedTasks,
+        CancellationToken ct = default);
 }

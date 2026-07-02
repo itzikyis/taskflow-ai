@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using TaskFlow.Application.AI;
 using TaskFlow.Application.Interfaces;
 
 namespace TaskFlow.Infrastructure.Services;
@@ -51,6 +52,36 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
             "highlighting the key decisions, blockers, and action items:\n\n" + joined +
             "\n\nReply with only the summary paragraph.",
             ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<StoryPointEstimate> EstimateStoryPointsAsync(string title, string? description, CancellationToken ct)
+    {
+        var context = string.IsNullOrWhiteSpace(description)
+            ? $"Title: {title}"
+            : $"Title: {title}\nDescription: {description}";
+
+        var raw = await CallClaudeAsync(
+            "You are an agile story point estimator using the Fibonacci scale (1, 2, 3, 5, 8, 13). " +
+            "Estimate story points for the following task.\n\n" + context + "\n\n" +
+            "Reply in EXACTLY this format:\nPOINTS: <number>\nREASONING: <one sentence>\n" +
+            "Valid values for POINTS are only: 1, 2, 3, 5, 8, 13.", ct);
+
+        var lines = raw.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var pointsLine = lines.FirstOrDefault(l => l.StartsWith("POINTS:"));
+        var reasoningLine = lines.FirstOrDefault(l => l.StartsWith("REASONING:"));
+
+        var validPoints = new[] { 1, 2, 3, 5, 8, 13 };
+        var points = 3; // default
+        if (pointsLine is not null
+            && int.TryParse(pointsLine.Replace("POINTS:", "").Trim(), out var parsed)
+            && validPoints.Contains(parsed))
+        {
+            points = parsed;
+        }
+
+        var reasoning = reasoningLine?.Replace("REASONING:", "").Trim() ?? "Unable to parse reasoning.";
+        return new StoryPointEstimate(points, reasoning);
     }
 
     private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct)

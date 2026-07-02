@@ -1,14 +1,17 @@
 using MediatR;
+using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
 using TaskFlow.Domain.Entities;
+using TaskFlow.Domain.ValueObjects;
 
 namespace TaskFlow.Application.Tasks.Commands.CreateTask;
 
 /// <summary>Handles <see cref="CreateTaskCommand"/>.</summary>
-public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository)
+public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository, IMediator mediator)
     : IRequestHandler<CreateTaskCommand, Result<Guid>>
 {
+    /// <inheritdoc/>
     public async Task<Result<Guid>> Handle(
         CreateTaskCommand request,
         CancellationToken cancellationToken)
@@ -24,6 +27,21 @@ public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository)
 
         await taskRepository.AddAsync(taskResult.Value!, cancellationToken);
         await taskRepository.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await mediator.Send(new LogActivityCommand(
+                request.CreatedByUserId,
+                ActivityAction.Created,
+                "Task",
+                taskResult.Value!.Id,
+                taskResult.Value!.Title),
+                cancellationToken);
+        }
+        catch
+        {
+            // Logging failure must never break the main operation.
+        }
 
         return Result<Guid>.Success(taskResult.Value!.Id);
     }

@@ -1,13 +1,16 @@
 using MediatR;
+using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
+using TaskFlow.Domain.ValueObjects;
 
 namespace TaskFlow.Application.Tasks.Commands.UpdateTaskStatus;
 
 /// <summary>Handles <see cref="UpdateTaskStatusCommand"/>.</summary>
-internal sealed class UpdateTaskStatusCommandHandler(ITaskRepository taskRepository)
+internal sealed class UpdateTaskStatusCommandHandler(ITaskRepository taskRepository, IMediator mediator)
     : IRequestHandler<UpdateTaskStatusCommand, Result>
 {
+    /// <inheritdoc/>
     public async Task<Result> Handle(UpdateTaskStatusCommand request, CancellationToken cancellationToken)
     {
         var task = await taskRepository.GetByIdAsync(request.TaskId, cancellationToken);
@@ -20,6 +23,22 @@ internal sealed class UpdateTaskStatusCommandHandler(ITaskRepository taskReposit
 
         taskRepository.Update(task);
         await taskRepository.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await mediator.Send(new LogActivityCommand(
+                request.ActorId,
+                ActivityAction.StatusChanged,
+                "Task",
+                request.TaskId,
+                task.Title),
+                cancellationToken);
+        }
+        catch
+        {
+            // Logging failure must never break the main operation.
+        }
+
         return Result.Ok;
     }
 }

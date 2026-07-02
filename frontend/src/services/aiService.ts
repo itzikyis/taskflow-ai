@@ -26,4 +26,24 @@ export const aiService = {
     const { data } = await axios.post<StoryPointEstimate>('/api/ai/story-points', { title, description });
     return data;
   },
+  suggestSprintPlan: async (
+    backlog: Array<{ id: string; title: string; description?: string; priority: string; status: string }>,
+    sprintCapacity = 40,
+  ): Promise<SprintPlan> => {
+    const { data } = await axios.post<SprintPlan>('/api/ai/sprint-plan', { backlog, sprintCapacity });
+    return data;
+  },
 };
+
+export interface SprintTaskSuggestion {
+  taskId: string;
+  title: string;
+  estimatedPoints: number;
+  justification: string;
+}
+
+export interface SprintPlan {
+  sprintGoal: string;
+  suggestedTasks: SprintTaskSuggestion[];
+  reasoning: string;
+}

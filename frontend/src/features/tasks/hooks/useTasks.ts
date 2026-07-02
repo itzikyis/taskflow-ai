@@ -18,6 +18,13 @@ export function useTasks(assignedToUserId?: string) {
   });
 }
 
+export function useAllTasks() {
+  return useQuery({
+    queryKey: [TASKS_KEY],
+    queryFn: () => taskService.getAll(),
+  });
+}
+
 export function useTask(id: string) {
   return useQuery({
     queryKey: [TASKS_KEY, id],

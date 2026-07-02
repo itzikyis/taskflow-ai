@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "taskflow-frontend",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "frontend", "dev"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "frontend",
       "port": 5174,
       "autoPort": false
     }

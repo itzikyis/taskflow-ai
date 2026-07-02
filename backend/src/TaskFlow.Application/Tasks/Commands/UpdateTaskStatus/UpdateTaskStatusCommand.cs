@@ -5,5 +5,5 @@ using TaskFlow.Domain.ValueObjects;
 namespace TaskFlow.Application.Tasks.Commands.UpdateTaskStatus;
 
 /// <summary>Transitions a task to a new status.</summary>
-public sealed record UpdateTaskStatusCommand(Guid TaskId, TaskItemStatus NewStatus)
+public sealed record UpdateTaskStatusCommand(Guid TaskId, TaskItemStatus NewStatus, Guid ActorId)
     : IRequest<Result>;

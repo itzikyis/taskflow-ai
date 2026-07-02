@@ -7,4 +7,5 @@ namespace TaskFlow.Application.Tasks.Commands.UpdateTask;
 public sealed record UpdateTaskCommand(
     Guid TaskId,
     string Title,
-    string? Description) : IRequest<Result>;
+    string? Description,
+    Guid ActorId) : IRequest<Result>;

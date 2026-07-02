@@ -29,4 +29,19 @@ export interface CreateTaskPayload {
 export interface UpdateTaskPayload {
   title: string;
   description?: string;
+  actorId: string;
+}
+
+export interface UpdateStatusPayload {
+  status: TaskStatus;
+  actorId: string;
+}
+
+export interface MoveToColumnPayload {
+  columnId: string | null;
+  actorId: string;
+}
+
+export interface DeleteTaskPayload {
+  actorId: string;
 }

@@ -1,9 +1,11 @@
 import axios from 'axios';
 import type {
   Task,
-  TaskStatus,
   CreateTaskPayload,
   UpdateTaskPayload,
+  UpdateStatusPayload,
+  MoveToColumnPayload,
+  DeleteTaskPayload,
 } from '@/features/tasks/types/task.types';
 
 const BASE = '/api/tasks';
@@ -29,15 +31,15 @@ export const taskService = {
     await axios.put(`${BASE}/${id}`, payload);
   },
 
-  updateStatus: async (id: string, status: TaskStatus): Promise<void> => {
-    await axios.patch(`${BASE}/${id}/status`, { status });
+  updateStatus: async (id: string, payload: UpdateStatusPayload): Promise<void> => {
+    await axios.patch(`${BASE}/${id}/status`, payload);
   },
 
-  moveToColumn: async (id: string, columnId: string | null): Promise<void> => {
-    await axios.patch(`${BASE}/${id}/column`, { columnId });
+  moveToColumn: async (id: string, payload: MoveToColumnPayload): Promise<void> => {
+    await axios.patch(`${BASE}/${id}/column`, payload);
   },
 
-  remove: async (id: string): Promise<void> => {
-    await axios.delete(`${BASE}/${id}`);
+  remove: async (id: string, payload: DeleteTaskPayload): Promise<void> => {
+    await axios.delete(`${BASE}/${id}`, { data: payload });
   },
 };

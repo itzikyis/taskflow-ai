@@ -69,7 +69,7 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(
-            new UpdateTaskCommand(id, request.Title, request.Description),
+            new UpdateTaskCommand(id, request.Title, request.Description, request.ActorId),
             cancellationToken);
 
         return result.IsFailure ? BadRequest(result.Error) : NoContent();
@@ -86,7 +86,7 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(
-            new UpdateTaskStatusCommand(id, request.Status),
+            new UpdateTaskStatusCommand(id, request.Status, request.ActorId),
             cancellationToken);
 
         if (result.IsFailure)
@@ -107,7 +107,7 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         [FromBody] MoveTaskToColumnRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new MoveTaskToColumnCommand(id, request.ColumnId), cancellationToken);
+        var result = await mediator.Send(new MoveTaskToColumnCommand(id, request.ColumnId, request.ActorId), cancellationToken);
         if (result.IsFailure)
         {
             if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
@@ -120,9 +120,12 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        Guid id,
+        [FromBody] DeleteTaskRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new DeleteTaskCommand(id), cancellationToken);
+        var result = await mediator.Send(new DeleteTaskCommand(id, request.ActorId), cancellationToken);
         return result.IsFailure ? NotFound(result.Error) : NoContent();
     }
 }
@@ -139,10 +142,13 @@ public sealed record CreateTaskRequest(
     Guid CreatedByUserId);
 
 /// <summary>Payload for updating a task.</summary>
-public sealed record UpdateTaskRequest(string Title, string? Description);
+public sealed record UpdateTaskRequest(string Title, string? Description, Guid ActorId);
 
 /// <summary>Payload for updating a task's status.</summary>
-public sealed record UpdateTaskStatusRequest(TaskItemStatus Status);
+public sealed record UpdateTaskStatusRequest(TaskItemStatus Status, Guid ActorId);
 
 /// <summary>Payload for moving a task to a board column.</summary>
-public sealed record MoveTaskToColumnRequest(Guid? ColumnId);
+public sealed record MoveTaskToColumnRequest(Guid? ColumnId, Guid ActorId);
+
+/// <summary>Payload for deleting a task.</summary>
+public sealed record DeleteTaskRequest(Guid ActorId);

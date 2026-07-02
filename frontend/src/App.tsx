@@ -7,14 +7,16 @@ import { RegisterPage } from '@/features/auth/components/RegisterPage';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { ActivityPage } from '@/features/activity/components/ActivityPage';
 
-type View = 'tasks' | 'projects' | 'teams';
+type View = 'tasks' | 'projects' | 'teams' | 'activity';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'tasks',    icon: '✓',  label: 'My Tasks'  },
   { id: 'projects', icon: '⬡',  label: 'Projects'  },
   { id: 'teams',    icon: '👥', label: 'Teams'     },
+  { id: 'activity', icon: '📋', label: 'Activity'  },
 ];
 
 export default function App() {
@@ -83,7 +85,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : 'Teams'}
+            {view === 'tasks' ? 'My Tasks' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : 'Activity Log'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -100,6 +102,7 @@ export default function App() {
           {view === 'tasks'    && <TaskListPage />}
           {view === 'projects' && <ProjectListPage />}
           {view === 'teams'    && <TeamListPage />}
+          {view === 'activity' && <ActivityPage />}
         </main>
       </div>
     </div>

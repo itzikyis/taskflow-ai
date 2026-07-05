@@ -5,7 +5,6 @@ import type {
   UpdateTaskPayload,
   UpdateStatusPayload,
   MoveToColumnPayload,
-  DeleteTaskPayload,
 } from '@/features/tasks/types/task.types';
 
 const BASE = '/api/tasks';
@@ -39,7 +38,7 @@ export const taskService = {
     await axios.patch(`${BASE}/${id}/column`, payload);
   },
 
-  remove: async (id: string, payload: DeleteTaskPayload): Promise<void> => {
-    await axios.delete(`${BASE}/${id}`, { data: payload });
+  remove: async (id: string): Promise<void> => {
+    await axios.delete(`${BASE}/${id}`);
   },
 };

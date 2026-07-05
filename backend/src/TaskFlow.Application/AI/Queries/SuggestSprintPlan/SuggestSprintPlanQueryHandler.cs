@@ -1,11 +1,15 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using TaskFlow.Application.AI.Common;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
 
 namespace TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 
 /// <summary>Handles <see cref="SuggestSprintPlanQuery"/> by delegating to the AI assistant service.</summary>
-public sealed class SuggestSprintPlanQueryHandler(IAiAssistantService ai)
+public sealed class SuggestSprintPlanQueryHandler(
+    IAiAssistantService ai,
+    ILogger<SuggestSprintPlanQueryHandler> logger)
     : IRequestHandler<SuggestSprintPlanQuery, Result<SprintPlan>>
 {
     /// <inheritdoc/>
@@ -17,9 +21,15 @@ public sealed class SuggestSprintPlanQueryHandler(IAiAssistantService ai)
             var plan = await ai.SuggestSprintPlanAsync(backlog, request.SprintCapacity, ct);
             return Result<SprintPlan>.Success(plan);
         }
-        catch (Exception)
+        catch (InvalidOperationException ex)
         {
-            return Result<SprintPlan>.Failure(new Error("AI.Unavailable", "AI service unavailable."));
+            logger.LogError(ex, "AI sprint planning failed: service is misconfigured.");
+            return Result<SprintPlan>.Failure(AiErrors.NotConfigured);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "AI sprint planning failed due to an unexpected error.");
+            return Result<SprintPlan>.Failure(AiErrors.Unavailable);
         }
     }
 }

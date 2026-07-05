@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using TaskFlow.Application.AI;
@@ -13,7 +14,8 @@ public sealed class GenerateReleaseNotesQueryHandlerTests
     private readonly IAiAssistantService _ai = Substitute.For<IAiAssistantService>();
     private readonly GenerateReleaseNotesQueryHandler _sut;
 
-    public GenerateReleaseNotesQueryHandlerTests() => _sut = new GenerateReleaseNotesQueryHandler(_ai);
+    public GenerateReleaseNotesQueryHandlerTests() =>
+        _sut = new GenerateReleaseNotesQueryHandler(_ai, NullLogger<GenerateReleaseNotesQueryHandler>.Instance);
 
     [Fact]
     public async Task Handle_WhenAiReturnsNotes_ReturnsSuccessWithMarkdownContent()
@@ -76,5 +78,24 @@ public sealed class GenerateReleaseNotesQueryHandlerTests
         // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("AI.Unavailable");
+    }
+
+    [Fact]
+    public async Task Handle_WhenServiceMisconfigured_ReturnsNotConfiguredError()
+    {
+        _ai.GenerateReleaseNotesAsync(
+                Arg.Any<string>(),
+                Arg.Any<IEnumerable<(string Title, string? Description, string Priority)>>(),
+                Arg.Any<CancellationToken>())
+           .ThrowsAsync(new InvalidOperationException("Anthropic API key not configured."));
+
+        var tasks = new List<CompletedTaskSummary> { new("Some task", null, "Low") };
+
+        var result = await _sut.Handle(
+            new GenerateReleaseNotesQuery("2.0.0", tasks),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("AI.NotConfigured");
     }
 }

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using TaskFlow.Application.AI;
@@ -13,7 +14,8 @@ public sealed class SuggestSprintPlanQueryHandlerTests
     private readonly IAiAssistantService _ai = Substitute.For<IAiAssistantService>();
     private readonly SuggestSprintPlanQueryHandler _sut;
 
-    public SuggestSprintPlanQueryHandlerTests() => _sut = new SuggestSprintPlanQueryHandler(_ai);
+    public SuggestSprintPlanQueryHandlerTests() =>
+        _sut = new SuggestSprintPlanQueryHandler(_ai, NullLogger<SuggestSprintPlanQueryHandler>.Instance);
 
     [Fact]
     public async Task Handle_WhenAiReturnsSprintPlan_ReturnsSuccessResult()
@@ -63,5 +65,24 @@ public sealed class SuggestSprintPlanQueryHandlerTests
         // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("AI.Unavailable");
+    }
+
+    [Fact]
+    public async Task Handle_WhenServiceMisconfigured_ReturnsNotConfiguredError()
+    {
+        _ai.SuggestSprintPlanAsync(
+                Arg.Any<IEnumerable<(Guid, string, string?, string, string)>>(),
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>())
+           .ThrowsAsync(new InvalidOperationException("Anthropic API key not configured."));
+
+        var query = new SuggestSprintPlanQuery(
+            [new TaskSummary(Guid.NewGuid(), "Some task", null, "Medium", "Todo")],
+            40);
+
+        var result = await _sut.Handle(query, CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("AI.NotConfigured");
     }
 }

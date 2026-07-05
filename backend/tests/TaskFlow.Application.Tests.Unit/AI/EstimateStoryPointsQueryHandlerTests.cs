@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using TaskFlow.Application.AI;
@@ -13,7 +14,8 @@ public sealed class EstimateStoryPointsQueryHandlerTests
     private readonly IAiAssistantService _ai = Substitute.For<IAiAssistantService>();
     private readonly EstimateStoryPointsQueryHandler _sut;
 
-    public EstimateStoryPointsQueryHandlerTests() => _sut = new EstimateStoryPointsQueryHandler(_ai);
+    public EstimateStoryPointsQueryHandlerTests() =>
+        _sut = new EstimateStoryPointsQueryHandler(_ai, NullLogger<EstimateStoryPointsQueryHandler>.Instance);
 
     [Fact]
     public async Task Handle_WhenAiReturnsEstimate_ReturnsSuccessWithCorrectPoints()
@@ -45,5 +47,19 @@ public sealed class EstimateStoryPointsQueryHandlerTests
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("AI.Unavailable");
+    }
+
+    [Fact]
+    public async Task Handle_WhenServiceMisconfigured_ReturnsNotConfiguredError()
+    {
+        _ai.EstimateStoryPointsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+           .ThrowsAsync(new InvalidOperationException("Anthropic API key not configured."));
+
+        var result = await _sut.Handle(
+            new EstimateStoryPointsQuery("Fix bug", null),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("AI.NotConfigured");
     }
 }

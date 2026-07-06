@@ -1,13 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
-import { useAuthStore } from '@/store/authStore';
 import type { CreateTaskPayload, UpdateTaskPayload, TaskStatus } from '../types/task.types';
-
-const FALLBACK_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
-
-function getActorId(): string {
-  return useAuthStore.getState().token?.userId ?? FALLBACK_ACTOR_ID;
-}
 
 const TASKS_KEY = 'tasks' as const;
 
@@ -44,8 +37,7 @@ export function useCreateTask() {
 export function useUpdateTask(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Omit<UpdateTaskPayload, 'actorId'>) =>
-      taskService.update(id, { ...payload, actorId: getActorId() }),
+    mutationFn: (payload: UpdateTaskPayload) => taskService.update(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }
@@ -54,7 +46,7 @@ export function useMoveTaskToColumn() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ taskId, columnId }: { taskId: string; columnId: string | null }) =>
-      taskService.moveToColumn(taskId, { columnId, actorId: getActorId() }),
+      taskService.moveToColumn(taskId, { columnId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }
@@ -63,7 +55,7 @@ export function useUpdateTaskStatus(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (status: TaskStatus) =>
-      taskService.updateStatus(id, { status, actorId: getActorId() }),
+      taskService.updateStatus(id, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }
@@ -71,7 +63,7 @@ export function useUpdateTaskStatus(id: string) {
 export function useDeleteTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => taskService.remove(id, { actorId: getActorId() }),
+    mutationFn: (id: string) => taskService.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }

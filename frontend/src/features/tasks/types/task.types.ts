@@ -18,30 +18,25 @@ export interface Task {
   columnId: string | null;
 }
 
+// Note: the acting user's identity is derived server-side from the JWT, so
+// these payloads no longer carry createdByUserId/actorId fields.
+
 export interface CreateTaskPayload {
   title: string;
   description?: string;
   priority: TaskPriority;
   dueDate?: string;
-  createdByUserId: string;
 }
 
 export interface UpdateTaskPayload {
   title: string;
   description?: string;
-  actorId: string;
 }
 
 export interface UpdateStatusPayload {
   status: TaskStatus;
-  actorId: string;
 }
 
 export interface MoveToColumnPayload {
   columnId: string | null;
-  actorId: string;
-}
-
-export interface DeleteTaskPayload {
-  actorId: string;
 }

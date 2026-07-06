@@ -16,6 +16,15 @@ namespace TaskFlow.API.Controllers;
 [Route("api/ai")]
 public sealed class AiController(IMediator mediator) : ControllerBase
 {
+    /// <summary>
+    /// Maps an AI query failure to the correct HTTP status: client-side validation
+    /// errors become 400, while genuine AI outages/misconfiguration become 503.
+    /// </summary>
+    private IActionResult MapFailure(TaskFlow.Domain.Common.Error error) =>
+        error.Code == "Validation.Failed"
+            ? BadRequest(error)
+            : StatusCode(StatusCodes.Status503ServiceUnavailable, error);
+
     /// <summary>Suggests a description for a task given its title.</summary>
     [HttpPost("suggest-description")]
     [ProducesResponseType(typeof(AiSuggestionDto), StatusCodes.Status200OK)]
@@ -50,6 +59,7 @@ public sealed class AiController(IMediator mediator) : ControllerBase
     [HttpPost("sprint-plan")]
     [ProducesResponseType(typeof(SprintPlan), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SuggestSprintPlan(
         [FromBody] SprintPlanRequest request,
         CancellationToken ct)
@@ -60,12 +70,13 @@ public sealed class AiController(IMediator mediator) : ControllerBase
             .ToList();
 
         var result = await mediator.Send(new SuggestSprintPlanQuery(backlog, request.SprintCapacity), ct);
-        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Generates AI release notes from a list of completed tasks.</summary>
     [HttpPost("release-notes")]
     [ProducesResponseType(typeof(ReleaseNotes), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GenerateReleaseNotes(
         [FromBody] GenerateReleaseNotesRequest request,
@@ -76,13 +87,14 @@ public sealed class AiController(IMediator mediator) : ControllerBase
             .ToList();
 
         var result = await mediator.Send(new GenerateReleaseNotesQuery(request.Version, completedTasks), ct);
-        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Estimates story points for a task using the Fibonacci scale.</summary>
     [HttpPost("story-points")]
     [ProducesResponseType(typeof(StoryPointEstimate), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> EstimateStoryPoints(
         [FromBody] EstimateStoryPointsRequest request,
         CancellationToken cancellationToken)
@@ -90,7 +102,7 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(
             new EstimateStoryPointsQuery(request.Title, request.Description),
             cancellationToken);
-        return result.IsFailure ? StatusCode(503, result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 }
 

@@ -25,7 +25,6 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
         description: description.trim() || undefined,
         priority,
         dueDate: dueDate || undefined,
-        createdByUserId: token.userId,
       },
       { onSuccess: onClose },
     );

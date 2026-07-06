@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
@@ -17,6 +19,17 @@ namespace TaskFlow.API.Controllers;
 [Route("api/[controller]")]
 public sealed class TasksController(IMediator mediator) : ControllerBase
 {
+    /// <summary>
+    /// Resolves the authenticated caller's user id from the JWT <c>sub</c> claim.
+    /// This is the trusted source of actor identity for auditing — never trust a
+    /// client-supplied id in the request body.
+    /// </summary>
+    private Guid? GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? User.FindFirstValue("sub");
+        return Guid.TryParse(sub, out var id) ? id : null;
+    }
     /// <summary>Gets all tasks, optionally filtered by assigned user.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TaskDto>), StatusCodes.Status200OK)]
@@ -38,19 +51,24 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         return result.IsFailure ? NotFound(result.Error) : Ok(result.Value);
     }
 
-    /// <summary>Creates a new task.</summary>
+    /// <summary>Creates a new task. The creator is the authenticated caller.</summary>
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create(
         [FromBody] CreateTaskRequest request,
         CancellationToken cancellationToken)
     {
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
         var command = new CreateTaskCommand(
             request.Title,
             request.Description,
             request.Priority,
-            request.CreatedByUserId);
+            userId);
 
         var result = await mediator.Send(command, cancellationToken);
         return result.IsFailure
@@ -60,33 +78,48 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
     /// <summary>Updates a task's title and description.</summary>
     [HttpPut("{id:guid}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateTaskRequest request,
         CancellationToken cancellationToken)
     {
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
         var result = await mediator.Send(
-            new UpdateTaskCommand(id, request.Title, request.Description, request.ActorId),
+            new UpdateTaskCommand(id, request.Title, request.Description, userId),
             cancellationToken);
 
-        return result.IsFailure ? BadRequest(result.Error) : NoContent();
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+        return NoContent();
     }
 
     /// <summary>Transitions a task to a new status.</summary>
     [HttpPatch("{id:guid}/status")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateTaskStatusRequest request,
         CancellationToken cancellationToken)
     {
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
         var result = await mediator.Send(
-            new UpdateTaskStatusCommand(id, request.Status, request.ActorId),
+            new UpdateTaskStatusCommand(id, request.Status, userId),
             cancellationToken);
 
         if (result.IsFailure)
@@ -99,15 +132,20 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
     /// <summary>Moves a task into a board column (pass null columnId to remove from board).</summary>
     [HttpPatch("{id:guid}/column")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MoveToColumn(
         Guid id,
         [FromBody] MoveTaskToColumnRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new MoveTaskToColumnCommand(id, request.ColumnId, request.ActorId), cancellationToken);
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
+        var result = await mediator.Send(new MoveTaskToColumnCommand(id, request.ColumnId, userId), cancellationToken);
         if (result.IsFailure)
         {
             if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
@@ -118,14 +156,18 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
     /// <summary>Deletes a task permanently.</summary>
     [HttpDelete("{id:guid}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         Guid id,
-        [FromBody] DeleteTaskRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new DeleteTaskCommand(id, request.ActorId), cancellationToken);
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
+        var result = await mediator.Send(new DeleteTaskCommand(id, userId), cancellationToken);
         return result.IsFailure ? NotFound(result.Error) : NoContent();
     }
 }
@@ -134,21 +176,21 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 // Request DTOs (API layer only — no business logic)
 // ---------------------------------------------------------------------------
 
+// Note: actor/creator identity is intentionally NOT part of these payloads —
+// it is derived from the authenticated caller's JWT (see GetCurrentUserId) so
+// clients cannot forge the identity recorded in the audit trail / activity log.
+
 /// <summary>Payload for creating a task.</summary>
 public sealed record CreateTaskRequest(
     string Title,
     string? Description,
-    TaskPriority Priority,
-    Guid CreatedByUserId);
+    TaskPriority Priority);
 
 /// <summary>Payload for updating a task.</summary>
-public sealed record UpdateTaskRequest(string Title, string? Description, Guid ActorId);
+public sealed record UpdateTaskRequest(string Title, string? Description);
 
 /// <summary>Payload for updating a task's status.</summary>
-public sealed record UpdateTaskStatusRequest(TaskItemStatus Status, Guid ActorId);
+public sealed record UpdateTaskStatusRequest(TaskItemStatus Status);
 
 /// <summary>Payload for moving a task to a board column.</summary>
-public sealed record MoveTaskToColumnRequest(Guid? ColumnId, Guid ActorId);
-
-/// <summary>Payload for deleting a task.</summary>
-public sealed record DeleteTaskRequest(Guid ActorId);
+public sealed record MoveTaskToColumnRequest(Guid? ColumnId);

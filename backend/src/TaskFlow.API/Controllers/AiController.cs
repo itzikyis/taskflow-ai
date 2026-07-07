@@ -64,8 +64,17 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         [FromBody] SprintPlanRequest request,
         CancellationToken ct)
     {
+        // Reject malformed ids explicitly rather than silently dropping the item,
+        // which would otherwise surface as a misleading "empty backlog" error.
+        var invalidId = request.Backlog.FirstOrDefault(t => !Guid.TryParse(t.Id, out _));
+        if (invalidId is not null)
+        {
+            return BadRequest(new TaskFlow.Domain.Common.Error(
+                "Validation.Failed",
+                $"Backlog task id '{invalidId.Id}' is not a valid GUID."));
+        }
+
         var backlog = request.Backlog
-            .Where(t => Guid.TryParse(t.Id, out _))
             .Select(t => new TaskSummary(Guid.Parse(t.Id), t.Title, t.Description, t.Priority, t.Status))
             .ToList();
 

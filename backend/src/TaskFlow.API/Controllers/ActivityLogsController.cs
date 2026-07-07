@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
 using TaskFlow.Application.ActivityLogs.Dtos;
@@ -15,6 +17,17 @@ namespace TaskFlow.API.Controllers;
 [Route("api/activity")]
 public sealed class ActivityLogsController(IMediator mediator) : ControllerBase
 {
+    /// <summary>
+    /// Resolves the authenticated caller's user id from the JWT <c>sub</c> claim.
+    /// This is the trusted source of actor identity — never trust a client-supplied
+    /// id in the request body.
+    /// </summary>
+    private Guid? GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? User.FindFirstValue("sub");
+        return Guid.TryParse(sub, out var id) ? id : null;
+    }
     /// <summary>Gets the most recent activity log entries across the system.</summary>
     /// <param name="page">The 1-based page number (default: 1).</param>
     /// <param name="pageSize">The number of results per page (default: 50).</param>
@@ -98,14 +111,19 @@ public sealed class ActivityLogsController(IMediator mediator) : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 Created with the new log entry identifier.</returns>
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LogActivity(
         [FromBody] LogActivityRequest request,
         CancellationToken cancellationToken)
     {
+        if (GetCurrentUserId() is not { } actorId)
+            return Unauthorized();
+
         var command = new LogActivityCommand(
-            request.ActorId,
+            actorId,
             request.Action,
             request.EntityType,
             request.EntityId,
@@ -124,9 +142,12 @@ public sealed class ActivityLogsController(IMediator mediator) : ControllerBase
 // Request DTOs (API layer only — no business logic)
 // ---------------------------------------------------------------------------
 
+// Note: the actor identity is intentionally NOT part of this payload — it is
+// derived from the authenticated caller's JWT (see GetCurrentUserId) so clients
+// cannot forge the actor recorded in the activity log.
+
 /// <summary>Payload for recording an activity log entry.</summary>
 public sealed record LogActivityRequest(
-    Guid ActorId,
     ActivityAction Action,
     string EntityType,
     Guid EntityId,

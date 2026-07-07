@@ -4,8 +4,9 @@ import type { ActivityAction } from '@/features/activity/types/activity.types';
 
 const BASE = '/api/activity';
 
+// The actor is derived server-side from the authenticated caller's JWT, so it is
+// intentionally not part of this payload.
 export interface LogActivityPayload {
-  actorId: string;
   action: ActivityAction;
   entityType: string;
   entityId: string;

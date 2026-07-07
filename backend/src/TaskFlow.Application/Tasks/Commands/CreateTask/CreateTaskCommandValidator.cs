@@ -13,5 +13,8 @@ public sealed class CreateTaskCommandValidator : AbstractValidator<CreateTaskCom
 
         RuleFor(x => x.CreatedByUserId)
             .NotEmpty().WithMessage("CreatedByUserId is required.");
+
+        RuleFor(x => x.Priority)
+            .IsInEnum().WithMessage("Priority must be a valid value (Low, Medium, High, or Critical).");
     }
 }

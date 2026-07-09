@@ -18,6 +18,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<TaskDevelopmentLink> DevelopmentLinks => Set<TaskDevelopmentLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

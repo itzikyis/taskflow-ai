@@ -205,6 +205,45 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
         int EstimatedPoints,
         string? Justification);
 
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<SubtaskSuggestion>> GenerateSubtasksAsync(
+        string title, string? description, CancellationToken ct)
+    {
+        var context = string.IsNullOrWhiteSpace(description)
+            ? $"Title: {title}"
+            : $"Title: {title}\nDescription: {description}";
+
+        var prompt =
+            "You are an agile delivery assistant. Break the following task down into a set of " +
+            "3-8 concrete, actionable subtasks.\n\n" + context + "\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON array only):\n" +
+            "[\n" +
+            "  { \"title\": \"Short imperative subtask title\", \"description\": \"One sentence of detail\" }\n" +
+            "]\n\n" +
+            "Return between 3 and 8 items. Keep titles under 100 characters.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1024);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<List<SubtaskResponse>>(raw, options);
+            if (response is null || response.Count == 0)
+                return [];
+
+            return response
+                .Where(s => !string.IsNullOrWhiteSpace(s.Title))
+                .Select(s => new SubtaskSuggestion(s.Title!.Trim(), s.Description?.Trim()))
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private sealed record SubtaskResponse(string? Title, string? Description);
+
     private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct, int maxTokens = 512)
     {
         var body = JsonSerializer.Serialize(new

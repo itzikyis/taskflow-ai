@@ -6,6 +6,7 @@ import { AttachmentList } from '@/features/attachments/components/AttachmentList
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
 import { StoryPointEstimator } from './StoryPointEstimator';
 import { DevelopmentPanel } from '@/features/development/components/DevelopmentPanel';
+import { TaskBreakdownModal } from './TaskBreakdownModal';
 import { useAuthStore } from '@/store/authStore';
 
 interface TaskCardProps {
@@ -22,11 +23,17 @@ const PRIORITY_COLOR: Record<TaskPriority, { color: string; bg: string; dot: str
   Critical: { color: 'var(--priority-critical)', bg: 'var(--priority-critical-bg)', dot: '#7c3aed' },
 };
 
+// Fallback for unrecognised/legacy priority values so a single bad row can never
+// crash the whole board.
+const PRIORITY_FALLBACK = { color: 'var(--text-muted)', bg: 'var(--surface-bg)', dot: '#94a3b8' };
+
 const STATUS_COLOR: Record<TaskStatus, { color: string; bg: string }> = {
   Todo:       { color: 'var(--status-todo)',       bg: 'var(--status-todo-bg)'       },
   InProgress: { color: 'var(--status-inprogress)', bg: 'var(--status-inprogress-bg)' },
   Done:       { color: 'var(--status-done)',        bg: 'var(--status-done-bg)'       },
 };
+
+const STATUS_FALLBACK = { color: 'var(--text-muted)', bg: 'var(--surface-bg)' };
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   Todo: 'To Do',
@@ -49,6 +56,7 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
   const [panel, setPanel] = useState<Panel>(null);
   const [expanded, setExpanded] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuthStore();
@@ -77,8 +85,8 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
   };
 
   const toggle = (p: Panel) => setPanel(prev => prev === p ? null : p);
-  const pri = PRIORITY_COLOR[task.priority];
-  const st  = STATUS_COLOR[task.status];
+  const pri = PRIORITY_COLOR[task.priority] ?? PRIORITY_FALLBACK;
+  const st  = STATUS_COLOR[task.status] ?? STATUS_FALLBACK;
   const due = task.dueDate ? new Date(task.dueDate) : null;
   const overdue = isOverdue(task.dueDate) && task.status !== 'Done';
 
@@ -300,9 +308,31 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
                   taskDescription={task.description ?? undefined}
                 />
               </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e9d5ff' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Break down
+                </p>
+                <button
+                  type="button"
+                  className="tf-btn tf-btn-sm"
+                  onClick={() => setShowBreakdown(true)}
+                  style={{ color: '#7c3aed', borderColor: '#c4b5fd', background: '#f5f3ff' }}
+                >
+                  🧩 Break into subtasks
+                </button>
+              </div>
             </>
           )}
         </div>
+      )}
+
+      {showBreakdown && (
+        <TaskBreakdownModal
+          taskId={task.id}
+          taskTitle={task.title}
+          taskDescription={task.description ?? undefined}
+          onClose={() => setShowBreakdown(false)}
+        />
       )}
     </article>
   );

@@ -14,4 +14,5 @@ public sealed record TaskDto(
     Guid CreatedByUserId,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    Guid? ColumnId);
+    Guid? ColumnId,
+    Guid? ParentTaskId = null);

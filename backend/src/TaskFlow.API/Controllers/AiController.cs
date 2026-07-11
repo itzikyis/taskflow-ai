@@ -6,6 +6,7 @@ using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
 using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
+using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 
@@ -17,42 +18,46 @@ namespace TaskFlow.API.Controllers;
 public sealed class AiController(IMediator mediator) : ControllerBase
 {
     /// <summary>
-    /// Maps an AI query failure to the correct HTTP status: client-side validation
-    /// errors become 400, while genuine AI outages/misconfiguration become 503.
+    /// Maps an AI query failure to the correct HTTP status: genuine AI
+    /// outages/misconfiguration become 503, while everything else (client-side
+    /// validation) becomes 400.
     /// </summary>
     private IActionResult MapFailure(TaskFlow.Domain.Common.Error error) =>
-        error.Code == "Validation.Failed"
-            ? BadRequest(error)
-            : StatusCode(StatusCodes.Status503ServiceUnavailable, error);
+        error.Code is "AI.Unavailable" or "AI.NotConfigured"
+            ? StatusCode(StatusCodes.Status503ServiceUnavailable, error)
+            : BadRequest(error);
 
     /// <summary>Suggests a description for a task given its title.</summary>
     [HttpPost("suggest-description")]
     [ProducesResponseType(typeof(AiSuggestionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SuggestDescription([FromBody] SuggestDescriptionRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new SuggestTaskDescriptionQuery(request.TaskTitle), ct);
-        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Suggests a due date for a task.</summary>
     [HttpPost("suggest-due-date")]
     [ProducesResponseType(typeof(AiSuggestionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SuggestDueDate([FromBody] SuggestDueDateRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new SuggestDueDateQuery(request.TaskTitle, request.TaskDescription), ct);
-        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Summarizes a list of task comments.</summary>
     [HttpPost("summarize-comments")]
     [ProducesResponseType(typeof(AiSuggestionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SummarizeComments([FromBody] SummarizeCommentsRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new SummarizeCommentsQuery(request.Comments), ct);
-        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Suggests an AI-generated sprint plan from a list of backlog tasks.</summary>
@@ -113,6 +118,17 @@ public sealed class AiController(IMediator mediator) : ControllerBase
             cancellationToken);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Suggests a set of subtasks that break a larger task down into actionable work.</summary>
+    [HttpPost("task-breakdown")]
+    [ProducesResponseType(typeof(IReadOnlyList<SubtaskSuggestion>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> TaskBreakdown([FromBody] TaskBreakdownRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SuggestTaskBreakdownQuery(request.Title, request.Description), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -126,6 +142,9 @@ public sealed record SummarizeCommentsRequest(IReadOnlyList<string> Comments);
 
 /// <summary>Payload for story-points estimation endpoint.</summary>
 public sealed record EstimateStoryPointsRequest(string Title, string? Description);
+
+/// <summary>Payload for the AI task-breakdown endpoint.</summary>
+public sealed record TaskBreakdownRequest(string Title, string? Description);
 
 /// <summary>Payload for sprint-plan endpoint.</summary>
 public sealed record SprintPlanRequest(IReadOnlyList<TaskSummaryRequest> Backlog, int SprintCapacity = 40);

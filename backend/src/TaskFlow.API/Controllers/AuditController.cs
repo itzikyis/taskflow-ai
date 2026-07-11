@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.AuditTrail.Queries.GetByActor;
 using TaskFlow.Application.AuditTrail.Queries.GetByEntity;
@@ -10,6 +11,7 @@ namespace TaskFlow.API.Controllers;
 /// <summary>Read-only endpoints for querying the immutable audit trail.</summary>
 [ApiController]
 [Route("api/audit")]
+[Authorize]
 public sealed class AuditController(IMediator mediator) : ControllerBase
 {
     /// <summary>Returns all audit entries for a specific entity, ordered newest-first.</summary>

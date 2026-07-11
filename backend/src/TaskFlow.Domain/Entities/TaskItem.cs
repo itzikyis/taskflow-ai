@@ -50,6 +50,9 @@ public sealed class TaskItem : AggregateRoot
     /// <summary>Gets the board column this task is placed in, or null if not on a board.</summary>
     public Guid? ColumnId { get; private set; }
 
+    /// <summary>Gets the parent task this task is a subtask of, or null if it is top-level.</summary>
+    public Guid? ParentTaskId { get; private set; }
+
     /// <summary>Gets the ID of the user who created this task.</summary>
     public Guid CreatedByUserId { get; private init; }
 
@@ -125,6 +128,13 @@ public sealed class TaskItem : AggregateRoot
     public void MoveToColumn(Guid? columnId)
     {
         ColumnId = columnId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Marks this task as a subtask of the given parent task.</summary>
+    public void SetParent(Guid parentTaskId)
+    {
+        ParentTaskId = parentTaskId;
         UpdatedAt = DateTime.UtcNow;
     }
 

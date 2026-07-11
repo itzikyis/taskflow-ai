@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.Application.Tasks.Commands.CreateSubtasks;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
 using TaskFlow.Application.Tasks.Commands.UpdateTask;
@@ -170,6 +171,35 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new DeleteTaskCommand(id, userId), cancellationToken);
         return result.IsFailure ? NotFound(result.Error) : NoContent();
     }
+
+    /// <summary>Creates one or more subtasks under the given parent task.</summary>
+    [HttpPost("{id:guid}/subtasks")]
+    [Authorize]
+    [ProducesResponseType(typeof(IReadOnlyList<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateSubtasks(
+        Guid id,
+        [FromBody] CreateSubtasksRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
+        var subtasks = request.Subtasks
+            .Select(s => new NewSubtaskInput(s.Title, s.Description))
+            .ToList();
+
+        var result = await mediator.Send(new CreateSubtasksCommand(id, subtasks, userId), cancellationToken);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+
+        return Created(string.Empty, result.Value);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -194,3 +224,9 @@ public sealed record UpdateTaskStatusRequest(TaskItemStatus Status);
 
 /// <summary>Payload for moving a task to a board column.</summary>
 public sealed record MoveTaskToColumnRequest(Guid? ColumnId);
+
+/// <summary>Payload for creating subtasks under a parent task.</summary>
+public sealed record CreateSubtasksRequest(IReadOnlyList<SubtaskInput> Subtasks);
+
+/// <summary>A single subtask to create.</summary>
+public sealed record SubtaskInput(string Title, string? Description);

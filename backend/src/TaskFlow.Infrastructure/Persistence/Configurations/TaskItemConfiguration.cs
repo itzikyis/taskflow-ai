@@ -44,6 +44,11 @@ internal sealed class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.Property(t => t.ColumnId)
             .HasColumnName("column_id");
 
+        builder.Property(t => t.ParentTaskId)
+            .HasColumnName("parent_task_id");
+
+        builder.HasIndex(t => t.ParentTaskId);
+
         builder.Property(t => t.CreatedByUserId)
             .HasColumnName("created_by_user_id")
             .IsRequired();

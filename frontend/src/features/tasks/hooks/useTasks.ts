@@ -67,3 +67,12 @@ export function useDeleteTask() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }
+
+export function useCreateSubtasks(parentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (subtasks: Array<{ title: string; description?: string }>) =>
+      taskService.createSubtasks(parentId, subtasks),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
+  });
+}

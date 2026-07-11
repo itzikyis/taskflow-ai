@@ -5,6 +5,7 @@ import { CommentThread } from '@/features/comments/components/CommentThread';
 import { AttachmentList } from '@/features/attachments/components/AttachmentList';
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
 import { StoryPointEstimator } from './StoryPointEstimator';
+import { TaskBreakdownModal } from './TaskBreakdownModal';
 import { useAuthStore } from '@/store/authStore';
 
 interface TaskCardProps {
@@ -48,6 +49,7 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
   const [panel, setPanel] = useState<Panel>(null);
   const [expanded, setExpanded] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const { token } = useAuthStore();
@@ -283,9 +285,31 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
                   taskDescription={task.description ?? undefined}
                 />
               </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e9d5ff' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Break down
+                </p>
+                <button
+                  type="button"
+                  className="tf-btn tf-btn-sm"
+                  onClick={() => setShowBreakdown(true)}
+                  style={{ color: '#7c3aed', borderColor: '#c4b5fd', background: '#f5f3ff' }}
+                >
+                  🧩 Break into subtasks
+                </button>
+              </div>
             </>
           )}
         </div>
+      )}
+
+      {showBreakdown && (
+        <TaskBreakdownModal
+          taskId={task.id}
+          taskTitle={task.title}
+          taskDescription={task.description ?? undefined}
+          onClose={() => setShowBreakdown(false)}
+        />
       )}
     </article>
   );

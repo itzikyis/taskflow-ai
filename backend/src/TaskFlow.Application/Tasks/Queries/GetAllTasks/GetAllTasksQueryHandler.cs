@@ -25,6 +25,7 @@ internal sealed class GetAllTasksQueryHandler(ITaskRepository taskRepository)
             t.CreatedByUserId,
             t.CreatedAt,
             t.UpdatedAt,
-            t.ColumnId)).ToList();
+            t.ColumnId,
+            t.ParentTaskId)).ToList();
     }
 }

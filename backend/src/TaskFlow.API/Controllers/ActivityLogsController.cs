@@ -15,6 +15,7 @@ namespace TaskFlow.API.Controllers;
 /// <summary>Endpoints for querying and recording activity log entries.</summary>
 [ApiController]
 [Route("api/activity")]
+[Authorize]
 public sealed class ActivityLogsController(IMediator mediator) : ControllerBase
 {
     /// <summary>

@@ -33,7 +33,9 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
     }
     /// <summary>Gets all tasks, optionally filtered by assigned user.</summary>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(IReadOnlyList<TaskDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAll(
         [FromQuery] Guid? assignedToUserId,
         CancellationToken cancellationToken)
@@ -44,7 +46,9 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
     /// <summary>Gets a task by its unique identifier.</summary>
     [HttpGet("{id:guid}")]
+    [Authorize]
     [ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {

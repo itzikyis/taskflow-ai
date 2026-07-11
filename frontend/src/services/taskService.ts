@@ -41,4 +41,12 @@ export const taskService = {
   remove: async (id: string): Promise<void> => {
     await axios.delete(`${BASE}/${id}`);
   },
+
+  createSubtasks: async (
+    id: string,
+    subtasks: Array<{ title: string; description?: string }>,
+  ): Promise<string[]> => {
+    const { data } = await axios.post<string[]>(`${BASE}/${id}/subtasks`, { subtasks });
+    return data;
+  },
 };

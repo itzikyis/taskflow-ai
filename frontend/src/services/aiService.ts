@@ -18,6 +18,11 @@ export interface StoryPointEstimate {
   reasoning: string;
 }
 
+export interface SubtaskSuggestion {
+  title: string;
+  description: string | null;
+}
+
 export const aiService = {
   suggestDescription: async (taskTitle: string): Promise<AiSuggestion> => {
     const { data } = await axios.post<AiSuggestion>('/api/ai/suggest-description', { taskTitle });
@@ -33,6 +38,10 @@ export const aiService = {
   },
   estimateStoryPoints: async (title: string, description?: string): Promise<StoryPointEstimate> => {
     const { data } = await axios.post<StoryPointEstimate>('/api/ai/story-points', { title, description });
+    return data;
+  },
+  taskBreakdown: async (title: string, description?: string): Promise<SubtaskSuggestion[]> => {
+    const { data } = await axios.post<SubtaskSuggestion[]>('/api/ai/task-breakdown', { title, description });
     return data;
   },
   generateReleaseNotes: async (

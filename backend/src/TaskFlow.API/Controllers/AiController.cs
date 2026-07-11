@@ -6,6 +6,7 @@ using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
 using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
+using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 
@@ -113,6 +114,17 @@ public sealed class AiController(IMediator mediator) : ControllerBase
             cancellationToken);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Suggests a set of subtasks that break a larger task down into actionable work.</summary>
+    [HttpPost("task-breakdown")]
+    [ProducesResponseType(typeof(IReadOnlyList<SubtaskSuggestion>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> TaskBreakdown([FromBody] TaskBreakdownRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SuggestTaskBreakdownQuery(request.Title, request.Description), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -126,6 +138,9 @@ public sealed record SummarizeCommentsRequest(IReadOnlyList<string> Comments);
 
 /// <summary>Payload for story-points estimation endpoint.</summary>
 public sealed record EstimateStoryPointsRequest(string Title, string? Description);
+
+/// <summary>Payload for the AI task-breakdown endpoint.</summary>
+public sealed record TaskBreakdownRequest(string Title, string? Description);
 
 /// <summary>Payload for sprint-plan endpoint.</summary>
 public sealed record SprintPlanRequest(IReadOnlyList<TaskSummaryRequest> Backlog, int SprintCapacity = 40);

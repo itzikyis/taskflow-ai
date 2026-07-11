@@ -28,4 +28,10 @@ public interface IAiAssistantService
         string version,
         IEnumerable<(string Title, string? Description, string Priority)> completedTasks,
         CancellationToken ct = default);
+
+    /// <summary>Suggests 3-8 subtasks that break a larger task down into actionable work.</summary>
+    Task<IReadOnlyList<SubtaskSuggestion>> GenerateSubtasksAsync(
+        string title,
+        string? description,
+        CancellationToken ct = default);
 }

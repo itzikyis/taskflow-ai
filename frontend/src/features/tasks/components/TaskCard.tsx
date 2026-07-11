@@ -5,6 +5,7 @@ import { CommentThread } from '@/features/comments/components/CommentThread';
 import { AttachmentList } from '@/features/attachments/components/AttachmentList';
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
 import { StoryPointEstimator } from './StoryPointEstimator';
+import { DevelopmentPanel } from '@/features/development/components/DevelopmentPanel';
 import { TaskBreakdownModal } from './TaskBreakdownModal';
 import { useAuthStore } from '@/store/authStore';
 
@@ -13,7 +14,7 @@ interface TaskCardProps {
   onDelete: () => void;
 }
 
-type Panel = 'comments' | 'attachments' | 'ai' | null;
+type Panel = 'comments' | 'attachments' | 'development' | 'ai' | null;
 
 const PRIORITY_COLOR: Record<TaskPriority, { color: string; bg: string; dot: string }> = {
   Low:      { color: 'var(--priority-low)',      bg: 'var(--priority-low-bg)',      dot: '#10b981' },
@@ -246,6 +247,19 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           </button>
           <button
             type="button"
+            onClick={() => toggle('development')}
+            className="tf-btn tf-btn-ghost tf-btn-sm"
+            title="Linked branches & pull requests"
+            style={{
+              color: panel === 'development' ? 'var(--color-primary)' : 'var(--text-secondary)',
+              borderColor: panel === 'development' ? 'var(--color-primary)' : 'var(--surface-border)',
+              background: panel === 'development' ? 'var(--color-primary-light)' : 'none',
+            }}
+          >
+            🔗
+          </button>
+          <button
+            type="button"
             onClick={() => toggle('ai')}
             className="tf-btn tf-btn-ghost tf-btn-sm"
             style={{
@@ -272,6 +286,9 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
               </p>
               <AttachmentList taskId={task.id} currentUserId={userId} />
             </>
+          )}
+          {panel === 'development' && (
+            <DevelopmentPanel taskId={task.id} />
           )}
           {panel === 'ai' && (
             <>

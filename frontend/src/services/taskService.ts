@@ -49,4 +49,14 @@ export const taskService = {
     const { data } = await axios.post<string[]>(`${BASE}/${id}/subtasks`, { subtasks });
     return data;
   },
+
+  search: async (query: string): Promise<TaskSearchResult> => {
+    const { data } = await axios.post<TaskSearchResult>(`${BASE}/search`, { query });
+    return data;
+  },
 };
+
+export interface TaskSearchResult {
+  interpretation: string;
+  results: Task[];
+}

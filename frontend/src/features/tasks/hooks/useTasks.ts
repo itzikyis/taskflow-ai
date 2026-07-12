@@ -76,3 +76,9 @@ export function useCreateSubtasks(parentId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [TASKS_KEY] }),
   });
 }
+
+export function useTaskSearch() {
+  return useMutation({
+    mutationFn: (query: string) => taskService.search(query),
+  });
+}

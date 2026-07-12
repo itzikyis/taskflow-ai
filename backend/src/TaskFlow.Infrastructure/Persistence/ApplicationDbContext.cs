@@ -19,6 +19,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<TaskDevelopmentLink> DevelopmentLinks => Set<TaskDevelopmentLink>();
+    public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

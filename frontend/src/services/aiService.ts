@@ -23,6 +23,20 @@ export interface SubtaskSuggestion {
   description: string | null;
 }
 
+export interface RetroTaskInput {
+  title: string;
+  description?: string;
+  priority: string;
+}
+
+export interface SprintRetrospective {
+  summary: string;
+  wentWell: string[];
+  issues: string[];
+  estimateAccuracyNotes: string[];
+  actionItems: string[];
+}
+
 export const aiService = {
   suggestDescription: async (taskTitle: string): Promise<AiSuggestion> => {
     const { data } = await axios.post<AiSuggestion>('/api/ai/suggest-description', { taskTitle });
@@ -42,6 +56,13 @@ export const aiService = {
   },
   taskBreakdown: async (title: string, description?: string): Promise<SubtaskSuggestion[]> => {
     const { data } = await axios.post<SubtaskSuggestion[]>('/api/ai/task-breakdown', { title, description });
+    return data;
+  },
+  generateRetrospective: async (
+    completed: RetroTaskInput[],
+    incomplete: RetroTaskInput[],
+  ): Promise<SprintRetrospective> => {
+    const { data } = await axios.post<SprintRetrospective>('/api/ai/retrospective', { completed, incomplete });
     return data;
   },
   generateReleaseNotes: async (

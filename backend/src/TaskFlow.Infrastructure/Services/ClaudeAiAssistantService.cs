@@ -244,6 +244,64 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
 
     private sealed record SubtaskResponse(string? Title, string? Description);
 
+    /// <inheritdoc/>
+    public async Task<SprintRetrospective> GenerateRetrospectiveAsync(
+        IEnumerable<(string Title, string? Description, string Priority)> completed,
+        IEnumerable<(string Title, string? Description, string Priority)> incomplete,
+        CancellationToken ct)
+    {
+        var doneList = completed.ToList();
+        var openList = incomplete.ToList();
+
+        string Format(IEnumerable<(string Title, string? Description, string Priority)> items) =>
+            string.Join("\n", items.Select(t => $"- [{t.Priority}] {t.Title}: {t.Description ?? "No description"}"));
+
+        var prompt =
+            "You are an agile coach writing a sprint retrospective. Based on the completed and " +
+            "incomplete work below, produce a concise, data-backed retrospective draft.\n\n" +
+            $"Completed ({doneList.Count}):\n{Format(doneList)}\n\n" +
+            $"Incomplete ({openList.Count}):\n{Format(openList)}\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"summary\": \"1-2 sentence overview of the sprint\",\n" +
+            "  \"wentWell\": [\"...\"],\n" +
+            "  \"issues\": [\"...\"],\n" +
+            "  \"estimateAccuracyNotes\": [\"observations on scope/velocity/estimate accuracy\"],\n" +
+            "  \"actionItems\": [\"concrete improvements for next sprint\"]\n" +
+            "}\n\n" +
+            "Use empty arrays where there is nothing to report.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1024);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<RetrospectiveResponse>(raw, options);
+            if (response is null) return FallbackRetrospective();
+
+            return new SprintRetrospective(
+                response.Summary ?? string.Empty,
+                response.WentWell ?? [],
+                response.Issues ?? [],
+                response.EstimateAccuracyNotes ?? [],
+                response.ActionItems ?? []);
+        }
+        catch
+        {
+            return FallbackRetrospective();
+        }
+    }
+
+    private static SprintRetrospective FallbackRetrospective() =>
+        new("Unable to generate retrospective.", [], [], [], []);
+
+    private sealed record RetrospectiveResponse(
+        string? Summary,
+        List<string>? WentWell,
+        List<string>? Issues,
+        List<string>? EstimateAccuracyNotes,
+        List<string>? ActionItems);
+
     private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct, int maxTokens = 512)
     {
         var body = JsonSerializer.Serialize(new

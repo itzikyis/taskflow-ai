@@ -5,6 +5,7 @@ using TaskFlow.Application.AI.Dtos;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
+using TaskFlow.Application.AI.Queries.GenerateRetrospective;
 using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
@@ -129,6 +130,21 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new SuggestTaskBreakdownQuery(request.Title, request.Description), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Generates a sprint retrospective draft from completed and incomplete tasks.</summary>
+    [HttpPost("retrospective")]
+    [ProducesResponseType(typeof(SprintRetrospective), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> Retrospective([FromBody] RetrospectiveRequest request, CancellationToken ct)
+    {
+        var completed = request.Completed.Select(t => new RetroTaskSummary(t.Title, t.Description, t.Priority)).ToList();
+        var incomplete = (request.Incomplete ?? [])
+            .Select(t => new RetroTaskSummary(t.Title, t.Description, t.Priority)).ToList();
+
+        var result = await mediator.Send(new GenerateSprintRetrospectiveQuery(completed, incomplete), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -145,6 +161,14 @@ public sealed record EstimateStoryPointsRequest(string Title, string? Descriptio
 
 /// <summary>Payload for the AI task-breakdown endpoint.</summary>
 public sealed record TaskBreakdownRequest(string Title, string? Description);
+
+/// <summary>Payload for the AI sprint-retrospective endpoint.</summary>
+public sealed record RetrospectiveRequest(
+    IReadOnlyList<RetroTaskInput> Completed,
+    IReadOnlyList<RetroTaskInput>? Incomplete);
+
+/// <summary>A single task entry in the retrospective request.</summary>
+public sealed record RetroTaskInput(string Title, string? Description, string Priority);
 
 /// <summary>Payload for sprint-plan endpoint.</summary>
 public sealed record SprintPlanRequest(IReadOnlyList<TaskSummaryRequest> Backlog, int SprintCapacity = 40);

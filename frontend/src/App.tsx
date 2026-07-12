@@ -13,13 +13,15 @@ import { SprintPlannerPage } from '@/features/ai/components/SprintPlannerPage';
 import { ReleaseNotesPage } from '@/features/ai/components/ReleaseNotesPage';
 import { RetrospectivePage } from '@/features/ai/components/RetrospectivePage';
 import { TimelinePage } from '@/features/timeline/components/TimelinePage';
+import { DashboardPage } from '@/features/reporting/components/DashboardPage';
 
-type View = 'tasks' | 'timeline' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'tasks',    icon: '✓',  label: 'My Tasks'  },
   { id: 'timeline', icon: '📅', label: 'Timeline'  },
+  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
   { id: 'projects', icon: '⬡',  label: 'Projects'  },
   { id: 'teams',    icon: '👥', label: 'Teams'     },
   { id: 'activity', icon: '📋', label: 'Activity'  },
@@ -95,7 +97,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -111,6 +113,7 @@ export default function App() {
         <main className="app-content">
           {view === 'tasks'    && <TaskListPage />}
           {view === 'timeline' && <TimelinePage />}
+          {view === 'dashboard' && <DashboardPage />}
           {view === 'projects' && <ProjectListPage />}
           {view === 'teams'    && <TeamListPage />}
           {view === 'activity' && <ActivityPage />}

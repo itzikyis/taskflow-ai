@@ -3,8 +3,11 @@ import { useTasks, useDeleteTask, useTaskSearch } from '../hooks/useTasks';
 import { useAllDependencies } from '../hooks/useDependencies';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
+import { TaskTableView, type GroupBy } from './TaskTableView';
 import type { Task, TaskStatus } from '../types/task.types';
 import type { TaskSearchResult } from '@/services/taskService';
+
+type ViewMode = 'board' | 'list';
 
 const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Todo',       label: 'To Do',       color: 'var(--status-todo)'        },
@@ -21,6 +24,13 @@ export function TaskListPage() {
   const [filter, setFilter] = useState('');
   const [nlQuery, setNlQuery] = useState('');
   const [nlResult, setNlResult] = useState<TaskSearchResult | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (localStorage.getItem('taskflow-view-mode') as ViewMode) || 'board');
+  const [groupBy, setGroupBy] = useState<GroupBy>(
+    () => (localStorage.getItem('taskflow-group-by') as GroupBy) || 'none');
+
+  const changeViewMode = (m: ViewMode) => { setViewMode(m); localStorage.setItem('taskflow-view-mode', m); };
+  const changeGroupBy = (g: GroupBy) => { setGroupBy(g); localStorage.setItem('taskflow-group-by', g); };
 
   const runNlSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +138,38 @@ export function TaskListPage() {
         )}
       </div>
 
-      {/* ── Kanban board ────────────────────────────────────── */}
+      {/* ── View toggle ─────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button
+            type="button"
+            className={`tf-btn tf-btn-sm ${viewMode === 'board' ? 'tf-btn-primary' : 'tf-btn-ghost'}`}
+            onClick={() => changeViewMode('board')}
+          >
+            ▦ Board
+          </button>
+          <button
+            type="button"
+            className={`tf-btn tf-btn-sm ${viewMode === 'list' ? 'tf-btn-primary' : 'tf-btn-ghost'}`}
+            onClick={() => changeViewMode('list')}
+          >
+            ☰ List
+          </button>
+        </div>
+        {viewMode === 'list' && (
+          <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            Group by
+            <select className="tf-input" value={groupBy} onChange={e => changeGroupBy(e.target.value as GroupBy)} style={{ fontSize: 12, padding: '2px 6px' }}>
+              <option value="none">None</option>
+              <option value="status">Status</option>
+              <option value="priority">Priority</option>
+              <option value="assignee">Assignee</option>
+            </select>
+          </label>
+        )}
+      </div>
+
+      {/* ── Board / List ─────────────────────────────────────── */}
       {(!tasks || tasks.length === 0) ? (
         <div className="empty-state">
           <div className="empty-state-icon">✅</div>
@@ -141,6 +182,8 @@ export function TaskListPage() {
             + New task
           </button>
         </div>
+      ) : viewMode === 'list' ? (
+        <TaskTableView tasks={board} groupBy={groupBy} onDelete={id => deleteMutation.mutate(id)} />
       ) : (
         <div className="kanban-board">
           {COLUMNS.map(col => {

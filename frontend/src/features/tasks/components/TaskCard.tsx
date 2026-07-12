@@ -7,15 +7,18 @@ import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionS
 import { StoryPointEstimator } from './StoryPointEstimator';
 import { DevelopmentPanel } from '@/features/development/components/DevelopmentPanel';
 import { TimePanel } from './TimePanel';
+import { DependencyPanel } from './DependencyPanel';
 import { TaskBreakdownModal } from './TaskBreakdownModal';
 import { useAuthStore } from '@/store/authStore';
 
 interface TaskCardProps {
   task: Task;
   onDelete: () => void;
+  /** True when the task has at least one open (non-Done) blocker. */
+  isBlocked?: boolean;
 }
 
-type Panel = 'comments' | 'attachments' | 'development' | 'time' | 'ai' | null;
+type Panel = 'comments' | 'attachments' | 'development' | 'time' | 'dependencies' | 'ai' | null;
 
 const PRIORITY_COLOR: Record<TaskPriority, { color: string; bg: string; dot: string }> = {
   Low:      { color: 'var(--priority-low)',      bg: 'var(--priority-low-bg)',      dot: '#10b981' },
@@ -53,7 +56,7 @@ function isOverdue(dueDate?: string): boolean {
   return new Date(dueDate) < new Date(new Date().toDateString());
 }
 
-export function TaskCard({ task, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
   const [panel, setPanel] = useState<Panel>(null);
   const [expanded, setExpanded] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -144,6 +147,17 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
             >
               {task.priority}
             </span>
+
+            {/* Blocked badge */}
+            {isBlocked && (
+              <span
+                className="tf-badge"
+                title="This task has an open blocker"
+                style={{ color: 'var(--color-danger)', background: '#fee2e2', flexShrink: 0 }}
+              >
+                🚧 Blocked
+              </span>
+            )}
           </div>
 
           {task.description && !expanded && (
@@ -208,7 +222,14 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
         {nextStep && (
           <button
             type="button"
-            onClick={() => updateStatus.mutate(nextStep.status)}
+            onClick={() => {
+              // Warn (don't hard-block) when completing a task with open blockers.
+              if (nextStep.status === 'Done' && isBlocked &&
+                  !window.confirm('This task still has open blockers. Mark it done anyway?')) {
+                return;
+              }
+              updateStatus.mutate(nextStep.status);
+            }}
             disabled={updateStatus.isPending}
             className="tf-btn tf-btn-ghost tf-btn-sm"
             style={{
@@ -261,6 +282,19 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           </button>
           <button
             type="button"
+            onClick={() => toggle('dependencies')}
+            className="tf-btn tf-btn-ghost tf-btn-sm"
+            title="Dependencies"
+            style={{
+              color: panel === 'dependencies' ? 'var(--color-primary)' : (isBlocked ? 'var(--color-danger)' : 'var(--text-secondary)'),
+              borderColor: panel === 'dependencies' ? 'var(--color-primary)' : 'var(--surface-border)',
+              background: panel === 'dependencies' ? 'var(--color-primary-light)' : 'none',
+            }}
+          >
+            🚧
+          </button>
+          <button
+            type="button"
             onClick={() => toggle('time')}
             className="tf-btn tf-btn-ghost tf-btn-sm"
             title="Time tracking"
@@ -306,6 +340,9 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           )}
           {panel === 'time' && (
             <TimePanel taskId={task.id} />
+          )}
+          {panel === 'dependencies' && (
+            <DependencyPanel taskId={task.id} />
           )}
           {panel === 'ai' && (
             <>

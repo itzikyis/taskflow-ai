@@ -20,6 +20,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<TaskDevelopmentLink> DevelopmentLinks => Set<TaskDevelopmentLink>();
     public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
+    public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

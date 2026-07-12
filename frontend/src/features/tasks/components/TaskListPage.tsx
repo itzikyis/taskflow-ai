@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTasks, useDeleteTask, useTaskSearch } from '../hooks/useTasks';
+import { useAllDependencies } from '../hooks/useDependencies';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import type { Task, TaskStatus } from '../types/task.types';
@@ -13,6 +14,7 @@ const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
 
 export function TaskListPage() {
   const { data: tasks, isLoading, isError } = useTasks();
+  const { data: dependencies = [] } = useAllDependencies();
   const deleteMutation = useDeleteTask();
   const search = useTaskSearch();
   const [showCreate, setShowCreate] = useState(false);
@@ -52,6 +54,14 @@ export function TaskListPage() {
   // When an AI search is active its results drive the board; otherwise the
   // normal (optionally quick-filtered) task list is shown.
   const board: Task[] = nlResult ? nlResult.results : (filtered ?? []);
+
+  // A task is blocked when it has a dependency whose blocker task isn't Done.
+  const statusById = new Map((tasks ?? []).map(t => [t.id, t.status]));
+  const blockedIds = new Set(
+    dependencies
+      .filter(d => statusById.get(d.blockedByTaskId) !== 'Done')
+      .map(d => d.taskId),
+  );
 
   const byStatus = (status: TaskStatus): Task[] =>
     board.filter(t => t.status === status);
@@ -153,6 +163,7 @@ export function TaskListPage() {
                     <TaskCard
                       key={task.id}
                       task={task}
+                      isBlocked={blockedIds.has(task.id)}
                       onDelete={() => deleteMutation.mutate(task.id)}
                     />
                   ))

@@ -54,9 +54,28 @@ export const taskService = {
     const { data } = await axios.post<TaskSearchResult>(`${BASE}/search`, { query });
     return data;
   },
+
+  checkDuplicates: async (
+    title: string,
+    description?: string,
+    excludeTaskId?: string,
+  ): Promise<DuplicateMatch[]> => {
+    const { data } = await axios.post<DuplicateMatch[]>(`${BASE}/check-duplicates`, {
+      title,
+      description,
+      excludeTaskId,
+    });
+    return data;
+  },
 };
 
 export interface TaskSearchResult {
   interpretation: string;
   results: Task[];
+}
+
+export interface DuplicateMatch {
+  taskId: string;
+  title: string;
+  score: number;
 }

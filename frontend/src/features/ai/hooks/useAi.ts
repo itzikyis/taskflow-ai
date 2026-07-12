@@ -34,6 +34,18 @@ export function useTaskBreakdown() {
   });
 }
 
+export function useGenerateRetrospective() {
+  return useMutation({
+    mutationFn: ({
+      completed,
+      incomplete,
+    }: {
+      completed: import('@/services/aiService').RetroTaskInput[];
+      incomplete: import('@/services/aiService').RetroTaskInput[];
+    }) => aiService.generateRetrospective(completed, incomplete),
+  });
+}
+
 export function useGenerateReleaseNotes() {
   return useMutation({
     mutationFn: ({

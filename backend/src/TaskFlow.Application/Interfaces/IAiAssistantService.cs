@@ -34,4 +34,10 @@ public interface IAiAssistantService
         string title,
         string? description,
         CancellationToken ct = default);
+
+    /// <summary>Generates a sprint retrospective draft from completed and incomplete tasks.</summary>
+    Task<SprintRetrospective> GenerateRetrospectiveAsync(
+        IEnumerable<(string Title, string? Description, string Priority)> completed,
+        IEnumerable<(string Title, string? Description, string Priority)> incomplete,
+        CancellationToken ct = default);
 }

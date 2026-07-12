@@ -6,6 +6,7 @@ import { AttachmentList } from '@/features/attachments/components/AttachmentList
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
 import { StoryPointEstimator } from './StoryPointEstimator';
 import { DevelopmentPanel } from '@/features/development/components/DevelopmentPanel';
+import { TimePanel } from './TimePanel';
 import { TaskBreakdownModal } from './TaskBreakdownModal';
 import { useAuthStore } from '@/store/authStore';
 
@@ -14,7 +15,7 @@ interface TaskCardProps {
   onDelete: () => void;
 }
 
-type Panel = 'comments' | 'attachments' | 'development' | 'ai' | null;
+type Panel = 'comments' | 'attachments' | 'development' | 'time' | 'ai' | null;
 
 const PRIORITY_COLOR: Record<TaskPriority, { color: string; bg: string; dot: string }> = {
   Low:      { color: 'var(--priority-low)',      bg: 'var(--priority-low-bg)',      dot: '#10b981' },
@@ -260,6 +261,19 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           </button>
           <button
             type="button"
+            onClick={() => toggle('time')}
+            className="tf-btn tf-btn-ghost tf-btn-sm"
+            title="Time tracking"
+            style={{
+              color: panel === 'time' ? 'var(--color-primary)' : 'var(--text-secondary)',
+              borderColor: panel === 'time' ? 'var(--color-primary)' : 'var(--surface-border)',
+              background: panel === 'time' ? 'var(--color-primary-light)' : 'none',
+            }}
+          >
+            ⏱️
+          </button>
+          <button
+            type="button"
             onClick={() => toggle('ai')}
             className="tf-btn tf-btn-ghost tf-btn-sm"
             style={{
@@ -289,6 +303,9 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           )}
           {panel === 'development' && (
             <DevelopmentPanel taskId={task.id} />
+          )}
+          {panel === 'time' && (
+            <TimePanel taskId={task.id} />
           )}
           {panel === 'ai' && (
             <>

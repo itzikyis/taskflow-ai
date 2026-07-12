@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCreateTask } from '../hooks/useTasks';
 import type { TaskPriority } from '../types/task.types';
 import { TASK_PRIORITIES } from '../types/task.types';
 import { useAuthStore } from '@/store/authStore';
+import { taskService, type DuplicateMatch } from '@/services/taskService';
 
 interface CreateTaskFormProps {
   onClose: () => void;
@@ -13,8 +14,26 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
   const [description, setDesc]  = useState('');
   const [priority, setPriority] = useState<TaskPriority>('Medium');
   const [dueDate, setDueDate]   = useState('');
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [dupDismissed, setDupDismissed] = useState(false);
   const createMutation          = useCreateTask();
   const { token }               = useAuthStore();
+
+  // Debounced "possible duplicates" check as the user types, like Linear/Jira.
+  useEffect(() => {
+    const trimmed = title.trim();
+    if (trimmed.length < 6) {
+      setDuplicates([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      taskService
+        .checkDuplicates(trimmed, description.trim() || undefined)
+        .then(setDuplicates)
+        .catch(() => setDuplicates([]));
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [title, description]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +81,42 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               style={{ resize: 'vertical' }}
             />
           </div>
+
+          {duplicates.length > 0 && !dupDismissed && (
+            <div
+              style={{
+                border: '1px solid #f59e0b', background: '#fffbeb', borderRadius: 8,
+                padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#b45309' }}>
+                  ⚠️ Possible duplicate{duplicates.length > 1 ? 's' : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDupDismissed(true)}
+                  aria-label="Dismiss"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b45309', fontSize: 14, lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+              {duplicates.slice(0, 4).map(d => (
+                <div key={d.taskId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef3c7',
+                    padding: '1px 5px', borderRadius: 4, flexShrink: 0,
+                  }}>
+                    {Math.round(d.score * 100)}%
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">

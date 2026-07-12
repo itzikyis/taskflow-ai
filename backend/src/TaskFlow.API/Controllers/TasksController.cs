@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.DuplicateDetection.Queries.FindDuplicateTasks;
+using TaskFlow.Application.Search.Queries.SearchTasks;
 using TaskFlow.Application.Tasks.Commands.CreateSubtasks;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
@@ -206,6 +207,22 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         return Created(string.Empty, result.Value);
     }
 
+    /// <summary>Runs a natural-language task search (e.g. "overdue high priority tasks assigned to me").</summary>
+    [HttpPost("search")]
+    [Authorize]
+    [ProducesResponseType(typeof(SearchTasksResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Search(
+        [FromBody] SearchTasksRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (GetCurrentUserId() is not { } userId)
+            return Unauthorized();
+
+        var result = await mediator.Send(new SearchTasksQuery(request.Query, userId), cancellationToken);
+        return Ok(result);
+    }
+
     /// <summary>Finds likely duplicates of a task by title/description similarity.</summary>
     [HttpPost("check-duplicates")]
     [Authorize]
@@ -250,6 +267,9 @@ public sealed record CreateSubtasksRequest(IReadOnlyList<SubtaskInput> Subtasks)
 
 /// <summary>A single subtask to create.</summary>
 public sealed record SubtaskInput(string Title, string? Description);
+
+/// <summary>Payload for natural-language task search.</summary>
+public sealed record SearchTasksRequest(string Query);
 
 /// <summary>Payload for checking a candidate task against existing tasks for duplicates.</summary>
 public sealed record CheckDuplicatesRequest(string Title, string? Description, Guid? ExcludeTaskId);

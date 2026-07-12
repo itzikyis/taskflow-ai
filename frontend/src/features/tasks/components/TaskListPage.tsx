@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useTasks, useDeleteTask } from '../hooks/useTasks';
+import { useTasks, useDeleteTask, useTaskSearch } from '../hooks/useTasks';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import type { Task, TaskStatus } from '../types/task.types';
+import type { TaskSearchResult } from '@/services/taskService';
 
 const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Todo',       label: 'To Do',       color: 'var(--status-todo)'        },
@@ -13,8 +14,23 @@ const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
 export function TaskListPage() {
   const { data: tasks, isLoading, isError } = useTasks();
   const deleteMutation = useDeleteTask();
+  const search = useTaskSearch();
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState('');
+  const [nlQuery, setNlQuery] = useState('');
+  const [nlResult, setNlResult] = useState<TaskSearchResult | null>(null);
+
+  const runNlSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = nlQuery.trim();
+    if (!q) return;
+    search.mutate(q, { onSuccess: setNlResult });
+  };
+
+  const clearNlSearch = () => {
+    setNlResult(null);
+    setNlQuery('');
+  };
 
   if (isLoading) return (
     <div className="empty-state">
@@ -33,8 +49,12 @@ export function TaskListPage() {
     ? tasks?.filter(t => t.title.toLowerCase().includes(filter.toLowerCase()))
     : tasks;
 
+  // When an AI search is active its results drive the board; otherwise the
+  // normal (optionally quick-filtered) task list is shown.
+  const board: Task[] = nlResult ? nlResult.results : (filtered ?? []);
+
   const byStatus = (status: TaskStatus): Task[] =>
-    (filtered ?? []).filter(t => t.status === status);
+    board.filter(t => t.status === status);
 
   return (
     <div>
@@ -53,16 +73,49 @@ export function TaskListPage() {
         </button>
       </div>
 
-      {/* ── Filter bar ──────────────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <input
-          type="search"
-          className="tf-input"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder="🔍  Search tasks…"
-          style={{ maxWidth: 320 }}
-        />
+      {/* ── Filter + AI search bar ──────────────────────────── */}
+      <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            type="search"
+            className="tf-input"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="🔍  Quick filter by title…"
+            style={{ maxWidth: 280 }}
+          />
+          <form onSubmit={runNlSearch} style={{ display: 'flex', gap: 6, flex: 1, minWidth: 260 }}>
+            <input
+              type="text"
+              className="tf-input"
+              value={nlQuery}
+              onChange={e => setNlQuery(e.target.value)}
+              placeholder="✨  Ask… e.g. “overdue high priority tasks assigned to me”"
+              style={{ flex: 1 }}
+            />
+            <button type="submit" className="tf-btn tf-btn-primary tf-btn-sm" disabled={search.isPending || !nlQuery.trim()}>
+              {search.isPending ? '…' : 'Ask AI'}
+            </button>
+          </form>
+        </div>
+
+        {nlResult && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            padding: '8px 12px', border: '1px solid var(--color-primary)',
+            background: 'var(--color-primary-light)', borderRadius: 8,
+          }}>
+            <span style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 600 }}>
+              ✨ {nlResult.interpretation}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              — {nlResult.results.length} result{nlResult.results.length === 1 ? '' : 's'}
+            </span>
+            <button type="button" className="tf-btn tf-btn-ghost tf-btn-sm" onClick={clearNlSearch} style={{ marginLeft: 'auto', fontSize: 11 }}>
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Kanban board ────────────────────────────────────── */}

@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IDevelopmentLinkRepository, DevelopmentLinkRepository>();
         services.AddSingleton<IGitHubWebhookParser, GitHubWebhookParser>();
+        services.AddSingleton<ITaskSearchInterpreter, KeywordTaskSearchInterpreter>();
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

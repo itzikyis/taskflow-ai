@@ -50,6 +50,11 @@ export const taskService = {
     return data;
   },
 
+  search: async (query: string): Promise<TaskSearchResult> => {
+    const { data } = await axios.post<TaskSearchResult>(`${BASE}/search`, { query });
+    return data;
+  },
+
   checkDuplicates: async (
     title: string,
     description?: string,
@@ -63,6 +68,11 @@ export const taskService = {
     return data;
   },
 };
+
+export interface TaskSearchResult {
+  interpretation: string;
+  results: Task[];
+}
 
 export interface DuplicateMatch {
   taskId: string;

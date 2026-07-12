@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.Application.DuplicateDetection.Queries.FindDuplicateTasks;
 using TaskFlow.Application.Tasks.Commands.CreateSubtasks;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
@@ -204,6 +205,21 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
         return Created(string.Empty, result.Value);
     }
+
+    /// <summary>Finds likely duplicates of a task by title/description similarity.</summary>
+    [HttpPost("check-duplicates")]
+    [Authorize]
+    [ProducesResponseType(typeof(IReadOnlyList<DuplicateMatchDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CheckDuplicates(
+        [FromBody] CheckDuplicatesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var matches = await mediator.Send(
+            new FindDuplicateTasksQuery(request.Title, request.Description, request.ExcludeTaskId),
+            cancellationToken);
+        return Ok(matches);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -234,3 +250,6 @@ public sealed record CreateSubtasksRequest(IReadOnlyList<SubtaskInput> Subtasks)
 
 /// <summary>A single subtask to create.</summary>
 public sealed record SubtaskInput(string Title, string? Description);
+
+/// <summary>Payload for checking a candidate task against existing tasks for duplicates.</summary>
+public sealed record CheckDuplicatesRequest(string Title, string? Description, Guid? ExcludeTaskId);

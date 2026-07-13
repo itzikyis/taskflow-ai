@@ -9,11 +9,14 @@ export type GroupBy = 'none' | 'status' | 'priority' | 'assignee';
 // Valid forward/backward transitions, mirroring the backend rules.
 const ALLOWED_NEXT: Record<TaskStatus, TaskStatus[]> = {
   Todo: ['Todo', 'InProgress'],
-  InProgress: ['InProgress', 'Todo', 'Done'],
+  InProgress: ['InProgress', 'Todo', 'InReview', 'Done'],
+  InReview: ['InReview', 'InProgress', 'Done'],
   Done: ['Done'],
 };
 
-const STATUS_LABEL: Record<TaskStatus, string> = { Todo: 'To Do', InProgress: 'In Progress', Done: 'Done' };
+const STATUS_LABEL: Record<TaskStatus, string> = {
+  Todo: 'To Do', InProgress: 'In Progress', InReview: 'In Review', Done: 'Done',
+};
 
 interface TaskTableViewProps {
   tasks: Task[];

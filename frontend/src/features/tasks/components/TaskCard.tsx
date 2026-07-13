@@ -35,6 +35,7 @@ const PRIORITY_FALLBACK = { color: 'var(--text-muted)', bg: 'var(--surface-bg)',
 const STATUS_COLOR: Record<TaskStatus, { color: string; bg: string }> = {
   Todo:       { color: 'var(--status-todo)',       bg: 'var(--status-todo-bg)'       },
   InProgress: { color: 'var(--status-inprogress)', bg: 'var(--status-inprogress-bg)' },
+  InReview:   { color: 'var(--status-inreview)',   bg: 'var(--status-inreview-bg)'   },
   Done:       { color: 'var(--status-done)',        bg: 'var(--status-done-bg)'       },
 };
 
@@ -43,12 +44,14 @@ const STATUS_FALLBACK = { color: 'var(--text-muted)', bg: 'var(--surface-bg)' };
 const STATUS_LABEL: Record<TaskStatus, string> = {
   Todo: 'To Do',
   InProgress: 'In Progress',
+  InReview: 'In Review',
   Done: 'Done',
 };
 
 const NEXT_STATUS: Record<TaskStatus, { status: TaskStatus; label: string } | null> = {
   Todo:       { status: 'InProgress', label: 'Start'    },
-  InProgress: { status: 'Done',       label: 'Mark done' },
+  InProgress: { status: 'InReview',   label: 'Send to review' },
+  InReview:   { status: 'Done',       label: 'Mark done' },
   Done:       null,
 };
 

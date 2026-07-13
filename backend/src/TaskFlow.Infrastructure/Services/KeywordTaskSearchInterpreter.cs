@@ -30,7 +30,8 @@ public sealed partial class KeywordTaskSearchInterpreter : ITaskSearchInterprete
             return TaskSearchFilter.Empty;
 
         TaskItemStatus? status =
-            q.Contains("in progress") || q.Contains("in-progress") || q.Contains("wip") ? TaskItemStatus.InProgress
+            q.Contains("in review") || q.Contains("in-review") || q.Contains("review") ? TaskItemStatus.InReview
+            : q.Contains("in progress") || q.Contains("in-progress") || q.Contains("wip") ? TaskItemStatus.InProgress
             : q.Contains("to do") || q.Contains("todo") || q.Contains("backlog") ? TaskItemStatus.Todo
             : q.Contains("done") || q.Contains("completed") || q.Contains("complete")
               || q.Contains("finished") || q.Contains("closed") ? TaskItemStatus.Done

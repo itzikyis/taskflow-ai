@@ -82,3 +82,14 @@ export function useTaskSearch() {
     mutationFn: (query: string) => taskService.search(query),
   });
 }
+
+export function useAssignAgent(taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => taskService.assignAgent(taskId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [TASKS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
+    },
+  });
+}

@@ -40,4 +40,7 @@ public interface IAiAssistantService
         IEnumerable<(string Title, string? Description, string Priority)> completed,
         IEnumerable<(string Title, string? Description, string Priority)> incomplete,
         CancellationToken ct = default);
+
+    /// <summary>Drafts a proposed approach for a task, as if an AI agent were picking it up.</summary>
+    Task<string> DraftTaskApproachAsync(string title, string? description, CancellationToken ct = default);
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.Application.AI.Commands.AssignAiAgent;
 using TaskFlow.Application.DuplicateDetection.Queries.FindDuplicateTasks;
 using TaskFlow.Application.Search.Queries.SearchTasks;
 using TaskFlow.Application.Tasks.Commands.CreateSubtasks;
@@ -221,6 +222,23 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(new SearchTasksQuery(request.Query, userId), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>Assigns the AI Agent to a task; it drafts a proposed-approach comment.</summary>
+    [HttpPost("{taskId:guid}/assign-agent")]
+    [Authorize]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AssignAgent(Guid taskId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new AssignAiAgentCommand(taskId), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+        return Created(string.Empty, result.Value);
     }
 
     /// <summary>Finds likely duplicates of a task by title/description similarity.</summary>

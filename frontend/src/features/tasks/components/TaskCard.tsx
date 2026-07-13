@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import type { Task, TaskPriority, TaskStatus } from '../types/task.types';
-import { useUpdateTaskStatus, useUpdateTask } from '../hooks/useTasks';
+import { useUpdateTaskStatus, useUpdateTask, useAssignAgent } from '../hooks/useTasks';
+import { AI_AGENT_ID } from '@/services/taskService';
 import { CommentThread } from '@/features/comments/components/CommentThread';
 import { AttachmentList } from '@/features/attachments/components/AttachmentList';
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
@@ -67,6 +68,7 @@ export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
   const userId = token?.userId ?? '';
   const updateStatus = useUpdateTaskStatus(task.id);
   const updateTask = useUpdateTask(task.id);
+  const assignAgent = useAssignAgent(task.id);
   const nextStep = NEXT_STATUS[task.status];
 
   const startTitleEdit = () => {
@@ -373,6 +375,27 @@ export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
                   style={{ color: '#7c3aed', borderColor: '#c4b5fd', background: '#f5f3ff' }}
                 >
                   🧩 Break into subtasks
+                </button>
+              </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e9d5ff' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  AI Agent
+                </p>
+                {task.assignedToUserId === AI_AGENT_ID && (
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px' }}>
+                    🤖 Assigned — see the agent’s proposed approach in Comments.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="tf-btn tf-btn-sm"
+                  onClick={() => assignAgent.mutate(undefined, { onSuccess: () => toggle('comments') })}
+                  disabled={assignAgent.isPending}
+                  style={{ color: '#7c3aed', borderColor: '#c4b5fd', background: '#f5f3ff' }}
+                >
+                  {assignAgent.isPending
+                    ? 'Assigning…'
+                    : task.assignedToUserId === AI_AGENT_ID ? '🤖 Ask agent again' : '🤖 Assign AI Agent'}
                 </button>
               </div>
             </>

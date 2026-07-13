@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Task, TaskStatus } from '../types/task.types';
 import { TASK_STATUSES } from '../types/task.types';
 import { useUpdateTaskStatus, useUpdateTask } from '../hooks/useTasks';
+import { AI_AGENT_ID } from '@/services/taskService';
 
 export type GroupBy = 'none' | 'status' | 'priority' | 'assignee';
 
@@ -108,7 +109,9 @@ function TaskTableRow({ task, onDelete }: { task: Task; onDelete: (id: string) =
         {task.dueDate ? new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
       </Td>
       <Td style={{ color: 'var(--text-muted)' }}>
-        {task.assignedToUserId ? `${task.assignedToUserId.slice(0, 8)}…` : '—'}
+        {task.assignedToUserId === AI_AGENT_ID
+          ? '🤖 AI Agent'
+          : task.assignedToUserId ? `${task.assignedToUserId.slice(0, 8)}…` : '—'}
       </Td>
       <Td>
         <button

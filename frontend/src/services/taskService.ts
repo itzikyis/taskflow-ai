@@ -67,7 +67,15 @@ export const taskService = {
     });
     return data;
   },
+
+  assignAgent: async (taskId: string): Promise<string> => {
+    const { data } = await axios.post<string>(`${BASE}/${taskId}/assign-agent`);
+    return data;
+  },
 };
+
+/** Well-known id of the AI Agent pseudo-user (matches the backend constant). */
+export const AI_AGENT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 export interface TaskSearchResult {
   interpretation: string;

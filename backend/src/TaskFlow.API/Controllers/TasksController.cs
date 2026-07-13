@@ -76,7 +76,8 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
             request.Title,
             request.Description,
             request.Priority,
-            userId);
+            userId,
+            request.DueDate);
 
         var result = await mediator.Send(command, cancellationToken);
         return result.IsFailure
@@ -269,7 +270,8 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
 public sealed record CreateTaskRequest(
     string Title,
     string? Description,
-    TaskPriority Priority);
+    TaskPriority Priority,
+    DateTime? DueDate = null);
 
 /// <summary>Payload for updating a task.</summary>
 public sealed record UpdateTaskRequest(string Title, string? Description);

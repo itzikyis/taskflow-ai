@@ -21,7 +21,8 @@ public sealed class CreateTaskCommandHandler(ITaskRepository taskRepository, IMe
             request.Title,
             request.Description,
             request.Priority,
-            request.CreatedByUserId);
+            request.CreatedByUserId,
+            request.DueDate);
 
         if (taskResult.IsFailure)
             return Result<Guid>.Failure(taskResult.Error);

@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
         services.AddScoped<ITaskDependencyRepository, TaskDependencyRepository>();
         services.AddSingleton<IGitHubWebhookParser, GitHubWebhookParser>();
+        services.AddSingleton<ICalendarFeedBuilder, RfcCalendarFeedBuilder>();
         services.AddSingleton<ITaskSearchInterpreter, KeywordTaskSearchInterpreter>();
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();

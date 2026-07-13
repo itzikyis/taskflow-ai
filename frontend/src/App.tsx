@@ -14,8 +14,9 @@ import { ReleaseNotesPage } from '@/features/ai/components/ReleaseNotesPage';
 import { RetrospectivePage } from '@/features/ai/components/RetrospectivePage';
 import { TimelinePage } from '@/features/timeline/components/TimelinePage';
 import { DashboardPage } from '@/features/reporting/components/DashboardPage';
+import { IntegrationsPage } from '@/features/integrations/components/IntegrationsPage';
 
-type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -25,6 +26,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'projects', icon: '⬡',  label: 'Projects'  },
   { id: 'teams',    icon: '👥', label: 'Teams'     },
   { id: 'activity', icon: '📋', label: 'Activity'  },
+  { id: 'integrations', icon: '📆', label: 'Integrations' },
   { id: 'audit',          icon: '🛡️', label: 'Audit Trail'   },
   { id: 'sprint-planner', icon: '🗓️', label: 'Sprint Planner' },
   { id: 'release-notes', icon: '📝', label: 'Release Notes' },
@@ -97,7 +99,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -121,6 +123,7 @@ export default function App() {
           {view === 'sprint-planner' && <SprintPlannerPage />}
           {view === 'release-notes'  && <ReleaseNotesPage />}
           {view === 'retrospective'  && <RetrospectivePage />}
+          {view === 'integrations'   && <IntegrationsPage />}
         </main>
       </div>
     </div>

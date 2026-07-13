@@ -44,6 +44,18 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
             ct);
     }
 
+    public Task<string> DraftTaskApproachAsync(string title, string? description, CancellationToken ct)
+    {
+        var context = string.IsNullOrWhiteSpace(description)
+            ? $"Task: \"{title}\""
+            : $"Task: \"{title}\"\nDescription: {description}";
+        return CallClaudeAsync(
+            "You are an AI agent that has just been assigned this task. Write a short first-pass " +
+            "\"proposed approach\" comment (3-5 concise bullet points) outlining how you'd tackle it and " +
+            "what you'd need from the team. Be practical. Reply with only the comment text.\n\n" + context,
+            ct);
+    }
+
     public Task<string> SummarizeCommentsAsync(IEnumerable<string> comments, CancellationToken ct)
     {
         var joined = string.Join("\n---\n", comments.Select((c, i) => $"Comment {i + 1}: {c}"));

@@ -2,9 +2,10 @@ import { useDashboardMetrics } from '../hooks/useReporting';
 import type { DashboardMetrics } from '@/services/reportingService';
 
 const card = {
-  background: 'var(--surface-bg)',
+  background: '#ffffff',
   border: '1px solid var(--border-color)',
   borderRadius: 'var(--radius-md)',
+  boxShadow: 'var(--shadow-sm)',
   padding: 18,
 };
 
@@ -26,7 +27,7 @@ export function DashboardPage() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20, marginBottom: 28 }}>
         <Stat label="To Do" value={data.todo} color="#94a3b8" />
         <Stat label="In Progress" value={data.inProgress} color="var(--status-inprogress, #2563eb)" />
         <Stat label="In Review" value={data.inReview} color="var(--status-inreview, #8b5cf6)" />
@@ -34,7 +35,7 @@ export function DashboardPage() {
         <Stat label="Total" value={data.total} color="var(--color-primary)" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
         {/* Status breakdown */}
         <div style={card}>
           <h3 style={{ margin: '0 0 14px', fontSize: 15 }}>Status breakdown</h3>

@@ -247,7 +247,7 @@ export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
           </button>
         )}
 
-        <div style={{ marginLeft: nextStep ? 0 : 'auto', display: 'flex', gap: 4, marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button
             type="button"
             onClick={() => toggle('comments')}

@@ -11,6 +11,7 @@ public sealed record DashboardMetricsDto(
     int Total,
     int Todo,
     int InProgress,
+    int InReview,
     int Done,
     int Low,
     int Medium,

@@ -20,6 +20,7 @@ public sealed class GetDashboardMetricsQueryHandlerTests
         var t = TaskItem.Create("T", null, priority, Guid.NewGuid()).Value!;
         if (assignee is { } a) t.AssignTo(a);
         if (status == TaskItemStatus.InProgress) t.TransitionTo(TaskItemStatus.InProgress);
+        if (status == TaskItemStatus.InReview) { t.TransitionTo(TaskItemStatus.InProgress); t.TransitionTo(TaskItemStatus.InReview); }
         if (status == TaskItemStatus.Done) { t.TransitionTo(TaskItemStatus.InProgress); t.TransitionTo(TaskItemStatus.Done); }
         return t;
     }
@@ -34,20 +35,23 @@ public sealed class GetDashboardMetricsQueryHandlerTests
             Make(TaskItemStatus.InProgress, TaskPriority.High, alice),
             Make(TaskItemStatus.Done, TaskPriority.Low, alice),
             Make(TaskItemStatus.Todo, TaskPriority.Critical),
+            Make(TaskItemStatus.InReview, TaskPriority.Medium, alice),
         };
         _tasks.GetAllAsync(null, Arg.Any<CancellationToken>()).Returns(list);
 
         var result = await _sut.Handle(new GetDashboardMetricsQuery(), CancellationToken.None);
 
-        result.Total.Should().Be(4);
+        result.Total.Should().Be(5);
         result.Todo.Should().Be(2);
         result.InProgress.Should().Be(1);
+        result.InReview.Should().Be(1);
         result.Done.Should().Be(1);
         result.High.Should().Be(2);
         result.Critical.Should().Be(1);
 
-        // Workload counts only open tasks: Alice has 2 open, one unassigned open.
-        result.Workload.Should().ContainSingle(w => w.UserId == alice && w.OpenTasks == 2);
+        // Workload counts only open tasks: Alice has 3 open (Todo, InProgress, InReview),
+        // one unassigned open.
+        result.Workload.Should().ContainSingle(w => w.UserId == alice && w.OpenTasks == 3);
         result.Workload.Should().ContainSingle(w => w.UserId == null && w.OpenTasks == 1);
 
         // One Done task -> one completion-trend point.

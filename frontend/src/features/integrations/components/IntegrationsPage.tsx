@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { SlackSettings } from './SlackSettings';
 
 const panel = {
   background: 'var(--surface-bg)',
@@ -55,6 +56,8 @@ export function IntegrationsPage() {
           </ul>
         </div>
       </div>
+
+      <SlackSettings />
 
       <div style={{ ...panel, marginTop: 16, opacity: 0.75 }}>
         <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>Two-way OAuth sync <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>· coming soon</span></h3>

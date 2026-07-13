@@ -60,7 +60,7 @@ export function TimelinePage() {
         </div>
       </div>
 
-      <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+      <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#ffffff', boxShadow: 'var(--shadow-sm)' }}>
         {bars
           .sort((a, b) => a.start - b.start)
           .map(({ task, start, end }) => {

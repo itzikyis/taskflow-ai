@@ -9,4 +9,5 @@ public sealed record CreateTaskCommand(
     string Title,
     string? Description,
     TaskPriority Priority,
-    Guid CreatedByUserId) : IRequest<Result<Guid>>;
+    Guid CreatedByUserId,
+    DateTime? DueDate = null) : IRequest<Result<Guid>>;

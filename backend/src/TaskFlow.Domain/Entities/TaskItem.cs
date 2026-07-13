@@ -67,7 +67,8 @@ public sealed class TaskItem : AggregateRoot
         string title,
         string? description,
         TaskPriority priority,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        DateTime? dueDate = null)
     {
         if (string.IsNullOrWhiteSpace(title))
             return Result<TaskItem>.Failure(TaskErrors.TitleRequired);
@@ -76,6 +77,8 @@ public sealed class TaskItem : AggregateRoot
             return Result<TaskItem>.Failure(TaskErrors.TitleTooLong);
 
         var task = new TaskItem(Guid.NewGuid(), title.Trim(), description?.Trim(), priority, createdByUserId);
+        if (dueDate is { } due)
+            task.DueDate = due;
         return Result<TaskItem>.Success(task);
     }
 

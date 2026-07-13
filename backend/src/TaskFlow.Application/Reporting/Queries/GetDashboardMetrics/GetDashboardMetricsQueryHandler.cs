@@ -34,6 +34,7 @@ public sealed class GetDashboardMetricsQueryHandler(ITaskRepository taskReposito
             Total: tasks.Count,
             Todo: tasks.Count(t => t.Status == TaskItemStatus.Todo),
             InProgress: tasks.Count(t => t.Status == TaskItemStatus.InProgress),
+            InReview: tasks.Count(t => t.Status == TaskItemStatus.InReview),
             Done: tasks.Count(t => t.Status == TaskItemStatus.Done),
             Low: Count(tasks, TaskPriority.Low),
             Medium: Count(tasks, TaskPriority.Medium),

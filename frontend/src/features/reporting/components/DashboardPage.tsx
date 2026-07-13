@@ -26,9 +26,10 @@ export function DashboardPage() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
         <Stat label="To Do" value={data.todo} color="#94a3b8" />
         <Stat label="In Progress" value={data.inProgress} color="var(--status-inprogress, #2563eb)" />
+        <Stat label="In Review" value={data.inReview} color="var(--status-inreview, #8b5cf6)" />
         <Stat label="Done" value={data.done} color="var(--status-done, #10b981)" />
         <Stat label="Total" value={data.total} color="var(--color-primary)" />
       </div>
@@ -39,6 +40,7 @@ export function DashboardPage() {
           <h3 style={{ margin: '0 0 14px', fontSize: 15 }}>Status breakdown</h3>
           <Bar label="To Do" value={data.todo} total={data.total} color="#94a3b8" />
           <Bar label="In Progress" value={data.inProgress} total={data.total} color="#2563eb" />
+          <Bar label="In Review" value={data.inReview} total={data.total} color="#8b5cf6" />
           <Bar label="Done" value={data.done} total={data.total} color="#10b981" />
         </div>
 

@@ -14,6 +14,7 @@ export interface DashboardMetrics {
   total: number;
   todo: number;
   inProgress: number;
+  inReview: number;
   done: number;
   low: number;
   medium: number;

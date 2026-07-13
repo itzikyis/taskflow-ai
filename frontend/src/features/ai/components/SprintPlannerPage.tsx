@@ -13,6 +13,7 @@ const NON_DONE_STATUSES: TaskStatus[] = TASK_STATUSES.filter(s => s !== 'Done');
 const STATUS_LABELS: Record<TaskStatus, string> = {
   Todo: 'Todo',
   InProgress: 'In Progress',
+  InReview: 'In Review',
   Done: 'Done',
 };
 

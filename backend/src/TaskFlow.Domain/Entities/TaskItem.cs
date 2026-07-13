@@ -145,8 +145,11 @@ public sealed class TaskItem : AggregateRoot
         (from, to) switch
         {
             (TaskItemStatus.Todo, TaskItemStatus.InProgress) => true,
-            (TaskItemStatus.InProgress, TaskItemStatus.Done) => true,
             (TaskItemStatus.InProgress, TaskItemStatus.Todo) => true,
+            (TaskItemStatus.InProgress, TaskItemStatus.InReview) => true,
+            (TaskItemStatus.InProgress, TaskItemStatus.Done) => true,
+            (TaskItemStatus.InReview, TaskItemStatus.InProgress) => true,
+            (TaskItemStatus.InReview, TaskItemStatus.Done) => true,
             _ => false
         };
 }

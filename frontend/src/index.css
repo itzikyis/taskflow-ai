@@ -43,6 +43,8 @@
   --status-inprogress-bg:#dbeafe;
   --status-done:         #10b981;
   --status-done-bg:      #d1fae5;
+  --status-inreview:     #8b5cf6;
+  --status-inreview-bg:  #ede9fe;
 
   /* Semantic */
   --color-danger:       #ef4444;

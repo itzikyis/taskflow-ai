@@ -1,5 +1,5 @@
 export const TASK_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'] as const;
-export const TASK_STATUSES = ['Todo', 'InProgress', 'Done'] as const;
+export const TASK_STATUSES = ['Todo', 'InProgress', 'InReview', 'Done'] as const;
 
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];

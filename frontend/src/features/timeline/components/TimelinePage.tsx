@@ -8,6 +8,7 @@ const DAY = 24 * 60 * 60 * 1000;
 const STATUS_BAR: Record<TaskStatus, string> = {
   Todo: '#94a3b8',
   InProgress: 'var(--status-inprogress, #2563eb)',
+  InReview: 'var(--status-inreview, #8b5cf6)',
   Done: 'var(--status-done, #10b981)',
 };
 

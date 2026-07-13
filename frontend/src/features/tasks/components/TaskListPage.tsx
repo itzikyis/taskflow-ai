@@ -12,6 +12,7 @@ type ViewMode = 'board' | 'list';
 const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Todo',       label: 'To Do',       color: 'var(--status-todo)'        },
   { status: 'InProgress', label: 'In Progress',  color: 'var(--status-inprogress)'  },
+  { status: 'InReview',   label: 'In Review',    color: 'var(--status-inreview)'    },
   { status: 'Done',       label: 'Done',         color: 'var(--status-done)'        },
 ];
 

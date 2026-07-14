@@ -80,6 +80,14 @@ export const aiService = {
     const { data } = await axios.post<MeetingNotesResult>('/api/ai/meeting-notes', { transcript, participants });
     return data;
   },
+  askCopilot: async (
+    question: string,
+    tasks: CopilotTaskContext[],
+    conversationHistory: string[],
+  ): Promise<CopilotAnswer> => {
+    const { data } = await axios.post<CopilotAnswer>('/api/ai/copilot', { question, tasks, conversationHistory });
+    return data;
+  },
   suggestSprintPlan: async (
     backlog: Array<{ id: string; title: string; description?: string; priority: string; status: string }>,
     sprintCapacity = 40,
@@ -132,6 +140,22 @@ export interface MeetingNotesResult {
   summary: string;
   keyDecisions: string[];
   actionItems: MeetingActionItem[];
+}
+
+export interface CopilotTaskContext {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  priority: string;
+  dueDate?: string | null;
+  openBlockerCount: number;
+  recentComments: string[];
+}
+
+export interface CopilotAnswer {
+  answer: string;
+  referencedTaskIds: string[];
 }
 
 export interface RiskTaskInput {

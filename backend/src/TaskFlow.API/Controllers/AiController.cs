@@ -4,6 +4,7 @@ using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
 using TaskFlow.Application.AI.Queries.AnalyzeMeetingNotes;
 using TaskFlow.Application.AI.Queries.AssessSprintRisk;
+using TaskFlow.Application.AI.Queries.AskCopilot;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
@@ -180,6 +181,22 @@ public sealed class AiController(IMediator mediator) : ControllerBase
             new AnalyzeMeetingNotesQuery(request.Transcript, request.Participants ?? []), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Asks the AI copilot a natural-language question about project status.</summary>
+    [HttpPost("copilot")]
+    [ProducesResponseType(typeof(CopilotAnswer), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> AskCopilot([FromBody] CopilotRequest request, CancellationToken ct)
+    {
+        var tasks = (request.Tasks ?? []).Select(t => new CopilotTaskContext(
+            t.Id, t.Title, t.Description, t.Status, t.Priority,
+            t.DueDate, t.OpenBlockerCount, t.RecentComments ?? [])).ToList();
+
+        var result = await mediator.Send(
+            new AskCopilotQuery(request.Question, tasks, request.ConversationHistory ?? []), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -233,3 +250,20 @@ public sealed record RiskTaskRequest(
 
 /// <summary>Payload for the meeting-notes analysis endpoint.</summary>
 public sealed record MeetingNotesRequest(string Transcript, IReadOnlyList<string>? Participants);
+
+/// <summary>Payload for the copilot endpoint.</summary>
+public sealed record CopilotRequest(
+    string Question,
+    IReadOnlyList<CopilotTaskRequest>? Tasks,
+    IReadOnlyList<string>? ConversationHistory);
+
+/// <summary>A single task snapshot for copilot context.</summary>
+public sealed record CopilotTaskRequest(
+    string Id,
+    string Title,
+    string? Description,
+    string Status,
+    string Priority,
+    string? DueDate,
+    int OpenBlockerCount,
+    IReadOnlyList<string>? RecentComments);

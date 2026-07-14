@@ -55,4 +55,11 @@ public interface IAiAssistantService
         string transcript,
         IReadOnlyList<string> participantNames,
         CancellationToken ct = default);
+
+    /// <summary>Answers a natural-language question about project status using task context.</summary>
+    Task<CopilotAnswer> AskCopilotAsync(
+        string question,
+        IReadOnlyList<Application.AI.Queries.AskCopilot.CopilotTaskContext> tasks,
+        IReadOnlyList<string> conversationHistory,
+        CancellationToken ct = default);
 }

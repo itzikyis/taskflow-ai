@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Queries.AssessSprintRisk;
+using TaskFlow.Application.AI.Queries.AskCopilot;
 using TaskFlow.Application.Interfaces;
 
 namespace TaskFlow.Infrastructure.Services;
@@ -447,6 +448,63 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
 
     private static MeetingNotesResult FallbackMeetingNotes() =>
         new("Unable to analyze meeting notes.", [], []);
+
+    /// <inheritdoc/>
+    public async Task<CopilotAnswer> AskCopilotAsync(
+        string question,
+        IReadOnlyList<CopilotTaskContext> tasks,
+        IReadOnlyList<string> conversationHistory,
+        CancellationToken ct)
+    {
+        var taskDump = string.Join("\n", tasks.Select(t =>
+        {
+            var comments = t.RecentComments.Count > 0
+                ? $"\n    Comments: {string.Join(" | ", t.RecentComments.Take(3))}"
+                : string.Empty;
+            var blocker = t.OpenBlockerCount > 0 ? $" [BLOCKED by {t.OpenBlockerCount} task(s)]" : string.Empty;
+            var due = t.DueDate != null ? $" due:{t.DueDate}" : string.Empty;
+            return $"- [{t.Status}][{t.Priority}]{blocker} \"{t.Title}\" (id:{t.Id}){due}: {t.Description ?? "no description"}{comments}";
+        }));
+
+        var history = conversationHistory.Count > 0
+            ? "\n\nPrevious Q&A in this session:\n" + string.Join("\n", conversationHistory)
+            : string.Empty;
+
+        var prompt =
+            $"You are a project management copilot for TaskFlow AI. Answer questions about the current project state using the task data below.\n\n" +
+            $"PROJECT TASKS ({tasks.Count} total):\n{taskDump}{history}\n\n" +
+            $"USER QUESTION: {question}\n\n" +
+            "Instructions:\n" +
+            "- Answer concisely and factually based only on the task data provided\n" +
+            "- Reference specific task titles when relevant\n" +
+            "- If asked about blockers, list the specific blocking tasks\n" +
+            "- If the data doesn't contain enough information to answer, say so clearly\n" +
+            "- Reply in EXACTLY this JSON format (no markdown, raw JSON):\n" +
+            "{\n" +
+            "  \"answer\": \"Your answer here\",\n" +
+            "  \"referencedTaskIds\": [\"id1\", \"id2\"]\n" +
+            "}\n" +
+            "referencedTaskIds should list the IDs of any tasks you mentioned in your answer.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1024);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<CopilotAnswerResponse>(raw, options);
+            if (response is null) return new CopilotAnswer(raw, []);
+
+            return new CopilotAnswer(
+                response.Answer ?? raw,
+                response.ReferencedTaskIds ?? []);
+        }
+        catch
+        {
+            return new CopilotAnswer(raw, []);
+        }
+    }
+
+    private sealed record CopilotAnswerResponse(string? Answer, List<string>? ReferencedTaskIds);
 
     private sealed record MeetingNotesResponse(
         string? Summary,

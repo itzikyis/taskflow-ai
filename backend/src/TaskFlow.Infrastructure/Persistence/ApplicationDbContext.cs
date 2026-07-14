@@ -24,6 +24,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SlackIntegration> SlackIntegrations => Set<SlackIntegration>();
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<Initiative> Initiatives => Set<Initiative>();
+    public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -4,12 +4,16 @@ using TaskFlow.Application.ActivityLogs.Commands.LogActivity;
 using TaskFlow.Application.AuditTrail.Commands.RecordAudit;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
+using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.ValueObjects;
 
 namespace TaskFlow.Application.Tasks.Commands.UpdateTaskStatus;
 
 /// <summary>Handles <see cref="UpdateTaskStatusCommand"/>.</summary>
-internal sealed class UpdateTaskStatusCommandHandler(ITaskRepository taskRepository, IMediator mediator)
+internal sealed class UpdateTaskStatusCommandHandler(
+    ITaskRepository taskRepository,
+    IMediator mediator,
+    IAutomationEvaluatorService automationEvaluator)
     : IRequestHandler<UpdateTaskStatusCommand, Result>
 {
     /// <inheritdoc/>
@@ -60,6 +64,19 @@ internal sealed class UpdateTaskStatusCommandHandler(ITaskRepository taskReposit
         catch
         {
             // Audit failure must never break the main operation.
+        }
+
+        try
+        {
+            await automationEvaluator.EvaluateAsync(
+                task,
+                AutomationTriggerType.TaskStatusChanged,
+                request.NewStatus.ToString(),
+                cancellationToken);
+        }
+        catch
+        {
+            // Automation failure must never break the main operation.
         }
 
         return Result.Ok;

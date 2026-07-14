@@ -18,8 +18,9 @@ import { CopilotPage } from '@/features/ai/components/CopilotPage';
 import { TimelinePage } from '@/features/timeline/components/TimelinePage';
 import { DashboardPage } from '@/features/reporting/components/DashboardPage';
 import { IntegrationsPage } from '@/features/integrations/components/IntegrationsPage';
+import { AutomationsPage } from '@/features/automations/components/AutomationsPage';
 
-type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'automations';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -36,7 +37,8 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'retrospective', icon: '🔁', label: 'Retrospective' },
   { id: 'risk-detection', icon: '🛡️', label: 'AI Risk Scan' },
   { id: 'meeting-notes', icon: '🗒️', label: 'Meeting Notes' },
-  { id: 'copilot', icon: '🤖', label: 'AI Copilot' },
+  { id: 'copilot',      icon: '🤖', label: 'AI Copilot'  },
+  { id: 'automations',  icon: '⚡', label: 'Automations' },
 ];
 
 export default function App() {
@@ -105,7 +107,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'automations' ? 'Automations' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -133,6 +135,7 @@ export default function App() {
           {view === 'risk-detection' && <RiskDetectionPage />}
           {view === 'meeting-notes'  && <MeetingNotesPage />}
           {view === 'copilot'        && <CopilotPage />}
+          {view === 'automations'    && <AutomationsPage />}
         </main>
       </div>
     </div>

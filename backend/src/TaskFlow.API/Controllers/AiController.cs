@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
+using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
 using TaskFlow.Application.AI.Queries.GenerateReleaseNotes;
@@ -145,6 +146,27 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new GenerateSprintRetrospectiveQuery(completed, incomplete), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Performs an AI risk assessment on the supplied tasks.</summary>
+    [HttpPost("risk-assessment")]
+    [ProducesResponseType(typeof(SprintRiskAssessment), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> AssessRisk([FromBody] RiskAssessmentRequest request, CancellationToken ct)
+    {
+        var inputs = request.Tasks.Select(t => new RiskTaskInput(
+            Guid.TryParse(t.Id, out var g) ? g : Guid.Empty,
+            t.Title,
+            t.Status,
+            t.Priority,
+            t.CreatedAt,
+            t.DueDate,
+            t.UpdatedAt,
+            t.OpenBlockerCount)).ToList();
+
+        var result = await mediator.Send(new AssessSprintRiskQuery(inputs), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -181,3 +203,17 @@ public sealed record GenerateReleaseNotesRequest(string Version, IReadOnlyList<C
 
 /// <summary>A single completed task entry in the release-notes request.</summary>
 public sealed record CompletedTaskSummaryRequest(string Title, string? Description, string Priority);
+
+/// <summary>Payload for the risk-assessment endpoint.</summary>
+public sealed record RiskAssessmentRequest(IReadOnlyList<RiskTaskRequest> Tasks);
+
+/// <summary>A single task snapshot for risk assessment.</summary>
+public sealed record RiskTaskRequest(
+    string Id,
+    string Title,
+    string Status,
+    string Priority,
+    DateTime CreatedAt,
+    DateTime? DueDate,
+    DateTime? UpdatedAt,
+    int OpenBlockerCount);

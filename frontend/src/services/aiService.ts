@@ -72,6 +72,10 @@ export const aiService = {
     const { data } = await axios.post<ReleaseNotes>('/api/ai/release-notes', { version, completedTasks });
     return data;
   },
+  assessRisk: async (tasks: RiskTaskInput[]): Promise<SprintRiskAssessment> => {
+    const { data } = await axios.post<SprintRiskAssessment>('/api/ai/risk-assessment', { tasks });
+    return data;
+  },
   suggestSprintPlan: async (
     backlog: Array<{ id: string; title: string; description?: string; priority: string; status: string }>,
     sprintCapacity = 40,
@@ -92,4 +96,33 @@ export interface SprintPlan {
   sprintGoal: string;
   suggestedTasks: SprintTaskSuggestion[];
   reasoning: string;
+}
+
+export type RiskLevel = 'OnTrack' | 'AtRisk' | 'Blocked';
+
+export interface TaskRiskScore {
+  taskId: string;
+  title: string;
+  level: RiskLevel;
+  reason: string;
+}
+
+export interface SprintRiskAssessment {
+  tasks: TaskRiskScore[];
+  onTrackCount: number;
+  atRiskCount: number;
+  blockedCount: number;
+  summary: string;
+  recommendations: string[];
+}
+
+export interface RiskTaskInput {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  createdAt: string;
+  dueDate?: string | null;
+  updatedAt?: string | null;
+  openBlockerCount: number;
 }

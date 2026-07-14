@@ -1,4 +1,5 @@
 using TaskFlow.Application.AI;
+using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 
 namespace TaskFlow.Application.Interfaces;
 
@@ -43,4 +44,9 @@ public interface IAiAssistantService
 
     /// <summary>Drafts a proposed approach for a task, as if an AI agent were picking it up.</summary>
     Task<string> DraftTaskApproachAsync(string title, string? description, CancellationToken ct = default);
+
+    /// <summary>Assesses risk level for a set of tasks and returns a sprint-wide health summary.</summary>
+    Task<SprintRiskAssessment> AssessSprintRiskAsync(
+        IReadOnlyList<Application.AI.Queries.AssessSprintRisk.RiskTaskInput> tasks,
+        CancellationToken ct = default);
 }

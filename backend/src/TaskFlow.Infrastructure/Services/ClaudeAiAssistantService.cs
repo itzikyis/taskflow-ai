@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using TaskFlow.Application.AI;
+using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 using TaskFlow.Application.Interfaces;
 
 namespace TaskFlow.Infrastructure.Services;
@@ -313,6 +314,87 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
         List<string>? Issues,
         List<string>? EstimateAccuracyNotes,
         List<string>? ActionItems);
+
+    /// <inheritdoc/>
+    public async Task<SprintRiskAssessment> AssessSprintRiskAsync(
+        IReadOnlyList<RiskTaskInput> tasks,
+        CancellationToken ct)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var taskSummary = string.Join("\n", tasks.Select(t =>
+        {
+            var daysSinceUpdate = t.UpdatedAt.HasValue
+                ? (int)(today - t.UpdatedAt.Value.Date).TotalDays
+                : (int)(today - t.CreatedAt.Date).TotalDays;
+            var dueInfo = t.DueDate.HasValue
+                ? $"due {t.DueDate.Value:yyyy-MM-dd} ({(int)(t.DueDate.Value.Date - today).TotalDays}d left)"
+                : "no due date";
+            return $"- id:{t.Id} | [{t.Priority}] [{t.Status}] {t.Title} | {dueInfo} | last activity {daysSinceUpdate}d ago | blockers:{t.OpenBlockerCount}";
+        }));
+
+        var prompt =
+            $"You are a senior project manager assessing risk for tasks in an active sprint. Today is {today:yyyy-MM-dd}.\n\n" +
+            $"Tasks:\n{taskSummary}\n\n" +
+            "Score each task as OnTrack, AtRisk, or Blocked based on:\n" +
+            "- Overdue or <3 days to deadline with non-Done status → AtRisk or Blocked\n" +
+            "- Stalled (no activity >5 days, not Done) → AtRisk\n" +
+            "- Has open blockers → Blocked\n" +
+            "- Everything else → OnTrack\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"tasks\": [\n" +
+            "    { \"taskId\": \"<guid>\", \"title\": \"...\", \"level\": \"OnTrack|AtRisk|Blocked\", \"reason\": \"one concise sentence\" }\n" +
+            "  ],\n" +
+            "  \"summary\": \"2-3 sentence sprint health summary\",\n" +
+            "  \"recommendations\": [\"actionable recommendation 1\", \"actionable recommendation 2\"]\n" +
+            "}";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1500);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<RiskAssessmentResponse>(raw, options);
+            if (response is null) return FallbackRisk(tasks);
+
+            var scored = (response.Tasks ?? []).Select(t =>
+            {
+                var level = Enum.TryParse<RiskLevel>(t.Level, true, out var l) ? l : RiskLevel.OnTrack;
+                return new TaskRiskScore(
+                    Guid.TryParse(t.TaskId, out var g) ? g : Guid.Empty,
+                    t.Title ?? string.Empty,
+                    level,
+                    t.Reason ?? string.Empty);
+            }).ToList();
+
+            return new SprintRiskAssessment(
+                scored,
+                scored.Count(s => s.Level == RiskLevel.OnTrack),
+                scored.Count(s => s.Level == RiskLevel.AtRisk),
+                scored.Count(s => s.Level == RiskLevel.Blocked),
+                response.Summary ?? string.Empty,
+                response.Recommendations ?? []);
+        }
+        catch
+        {
+            return FallbackRisk(tasks);
+        }
+    }
+
+    private static SprintRiskAssessment FallbackRisk(IReadOnlyList<RiskTaskInput> tasks) =>
+        new([], 0, 0, 0, "Unable to generate risk assessment.", []);
+
+    private sealed record RiskAssessmentResponse(
+        List<RiskTaskScoreResponse>? Tasks,
+        string? Summary,
+        List<string>? Recommendations);
+
+    private sealed record RiskTaskScoreResponse(
+        string? TaskId,
+        string? Title,
+        string? Level,
+        string? Reason);
 
     private async Task<string> CallClaudeAsync(string prompt, CancellationToken ct, int maxTokens = 512)
     {

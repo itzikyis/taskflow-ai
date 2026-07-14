@@ -76,6 +76,10 @@ export const aiService = {
     const { data } = await axios.post<SprintRiskAssessment>('/api/ai/risk-assessment', { tasks });
     return data;
   },
+  analyzeMeetingNotes: async (transcript: string, participants: string[]): Promise<MeetingNotesResult> => {
+    const { data } = await axios.post<MeetingNotesResult>('/api/ai/meeting-notes', { transcript, participants });
+    return data;
+  },
   suggestSprintPlan: async (
     backlog: Array<{ id: string; title: string; description?: string; priority: string; status: string }>,
     sprintCapacity = 40,
@@ -114,6 +118,20 @@ export interface SprintRiskAssessment {
   blockedCount: number;
   summary: string;
   recommendations: string[];
+}
+
+export interface MeetingActionItem {
+  title: string;
+  description: string;
+  priority: string;
+  suggestedAssignee: string | null;
+  suggestedDueDate: string | null;
+}
+
+export interface MeetingNotesResult {
+  summary: string;
+  keyDecisions: string[];
+  actionItems: MeetingActionItem[];
 }
 
 export interface RiskTaskInput {

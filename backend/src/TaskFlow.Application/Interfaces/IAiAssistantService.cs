@@ -49,4 +49,10 @@ public interface IAiAssistantService
     Task<SprintRiskAssessment> AssessSprintRiskAsync(
         IReadOnlyList<Application.AI.Queries.AssessSprintRisk.RiskTaskInput> tasks,
         CancellationToken ct = default);
+
+    /// <summary>Analyzes meeting notes or transcript and extracts decisions and action items.</summary>
+    Task<MeetingNotesResult> AnalyzeMeetingNotesAsync(
+        string transcript,
+        IReadOnlyList<string> participantNames,
+        CancellationToken ct = default);
 }

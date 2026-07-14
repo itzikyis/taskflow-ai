@@ -12,11 +12,12 @@ import { AuditPage } from '@/features/audit/components/AuditPage';
 import { SprintPlannerPage } from '@/features/ai/components/SprintPlannerPage';
 import { ReleaseNotesPage } from '@/features/ai/components/ReleaseNotesPage';
 import { RetrospectivePage } from '@/features/ai/components/RetrospectivePage';
+import { RiskDetectionPage } from '@/features/ai/components/RiskDetectionPage';
 import { TimelinePage } from '@/features/timeline/components/TimelinePage';
 import { DashboardPage } from '@/features/reporting/components/DashboardPage';
 import { IntegrationsPage } from '@/features/integrations/components/IntegrationsPage';
 
-type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -31,6 +32,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'sprint-planner', icon: '🗓️', label: 'Sprint Planner' },
   { id: 'release-notes', icon: '📝', label: 'Release Notes' },
   { id: 'retrospective', icon: '🔁', label: 'Retrospective' },
+  { id: 'risk-detection', icon: '🛡️', label: 'AI Risk Scan' },
 ];
 
 export default function App() {
@@ -99,7 +101,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <NotificationBell />
@@ -124,6 +126,7 @@ export default function App() {
           {view === 'release-notes'  && <ReleaseNotesPage />}
           {view === 'retrospective'  && <RetrospectivePage />}
           {view === 'integrations'   && <IntegrationsPage />}
+          {view === 'risk-detection' && <RiskDetectionPage />}
         </main>
       </div>
     </div>

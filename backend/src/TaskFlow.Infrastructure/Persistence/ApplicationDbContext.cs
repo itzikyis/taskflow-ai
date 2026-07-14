@@ -23,6 +23,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
     public DbSet<SlackIntegration> SlackIntegrations => Set<SlackIntegration>();
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
+    public DbSet<Initiative> Initiatives => Set<Initiative>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

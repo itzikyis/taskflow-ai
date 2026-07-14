@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<ITaskDependencyRepository, TaskDependencyRepository>();
         services.AddScoped<IAutomationRuleRepository, AutomationRuleRepository>();
         services.AddScoped<IAutomationEvaluatorService, AutomationEvaluatorService>();
+        services.AddScoped<IInitiativeRepository, InitiativeRepository>();
         services.AddSingleton<IGitHubWebhookParser, GitHubWebhookParser>();
         services.AddSingleton<ICalendarFeedBuilder, RfcCalendarFeedBuilder>();
         services.AddScoped<ISlackIntegrationRepository, SlackIntegrationRepository>();

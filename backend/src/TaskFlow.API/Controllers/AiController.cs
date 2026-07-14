@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
+using TaskFlow.Application.AI.Queries.AnalyzeMeetingNotes;
 using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 using TaskFlow.Application.AI.Queries.EstimateStoryPoints;
 using TaskFlow.Application.AI.Queries.SuggestDueDate;
@@ -167,6 +168,18 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new AssessSprintRiskQuery(inputs), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
+
+    /// <summary>Analyzes meeting notes and extracts decisions and draft action-item tasks.</summary>
+    [HttpPost("meeting-notes")]
+    [ProducesResponseType(typeof(MeetingNotesResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> AnalyzeMeetingNotes([FromBody] MeetingNotesRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(
+            new AnalyzeMeetingNotesQuery(request.Transcript, request.Participants ?? []), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
 }
 
 /// <summary>Payload for suggest-description endpoint.</summary>
@@ -217,3 +230,6 @@ public sealed record RiskTaskRequest(
     DateTime? DueDate,
     DateTime? UpdatedAt,
     int OpenBlockerCount);
+
+/// <summary>Payload for the meeting-notes analysis endpoint.</summary>
+public sealed record MeetingNotesRequest(string Transcript, IReadOnlyList<string>? Participants);

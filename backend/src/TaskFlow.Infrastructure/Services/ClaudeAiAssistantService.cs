@@ -385,6 +385,81 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
     private static SprintRiskAssessment FallbackRisk(IReadOnlyList<RiskTaskInput> tasks) =>
         new([], 0, 0, 0, "Unable to generate risk assessment.", []);
 
+    /// <inheritdoc/>
+    public async Task<MeetingNotesResult> AnalyzeMeetingNotesAsync(
+        string transcript,
+        IReadOnlyList<string> participantNames,
+        CancellationToken ct)
+    {
+        var participantList = participantNames.Count > 0
+            ? string.Join(", ", participantNames)
+            : "unknown";
+
+        var prompt =
+            $"You are a project management assistant analyzing meeting notes.\n" +
+            $"Participants: {participantList}\n\n" +
+            $"Meeting transcript/notes:\n{transcript}\n\n" +
+            "Extract the following and reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"summary\": \"2-3 sentence overview of what was discussed and decided\",\n" +
+            "  \"keyDecisions\": [\"Decision 1\", \"Decision 2\"],\n" +
+            "  \"actionItems\": [\n" +
+            "    {\n" +
+            "      \"title\": \"Short imperative task title\",\n" +
+            "      \"description\": \"One sentence detail of what needs to be done\",\n" +
+            "      \"priority\": \"Low|Medium|High|Critical\",\n" +
+            "      \"suggestedAssignee\": \"Name from participants or null\",\n" +
+            "      \"suggestedDueDate\": \"YYYY-MM-DD or null\"\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}\n\n" +
+            "Rules:\n" +
+            "- Extract only concrete action items with a clear owner or next step\n" +
+            "- Priority: Critical for blockers, High for sprint commitments, Medium for near-term, Low for backlog\n" +
+            "- suggestedAssignee must be one of the participant names or null\n" +
+            "- Use empty arrays if nothing was found";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 1500);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<MeetingNotesResponse>(raw, options);
+            if (response is null) return FallbackMeetingNotes();
+
+            var items = (response.ActionItems ?? []).Select(a => new MeetingActionItem(
+                a.Title ?? string.Empty,
+                a.Description ?? string.Empty,
+                a.Priority ?? "Medium",
+                a.SuggestedAssignee,
+                a.SuggestedDueDate)).ToList();
+
+            return new MeetingNotesResult(
+                response.Summary ?? string.Empty,
+                response.KeyDecisions ?? [],
+                items);
+        }
+        catch
+        {
+            return FallbackMeetingNotes();
+        }
+    }
+
+    private static MeetingNotesResult FallbackMeetingNotes() =>
+        new("Unable to analyze meeting notes.", [], []);
+
+    private sealed record MeetingNotesResponse(
+        string? Summary,
+        List<string>? KeyDecisions,
+        List<MeetingActionItemResponse>? ActionItems);
+
+    private sealed record MeetingActionItemResponse(
+        string? Title,
+        string? Description,
+        string? Priority,
+        string? SuggestedAssignee,
+        string? SuggestedDueDate);
+
     private sealed record RiskAssessmentResponse(
         List<RiskTaskScoreResponse>? Tasks,
         string? Summary,

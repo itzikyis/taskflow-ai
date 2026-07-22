@@ -156,8 +156,16 @@ public sealed class AiController(IMediator mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> AssessRisk([FromBody] RiskAssessmentRequest request, CancellationToken ct)
     {
+        var invalidId = request.Tasks.FirstOrDefault(t => !Guid.TryParse(t.Id, out _));
+        if (invalidId is not null)
+        {
+            return BadRequest(new TaskFlow.Domain.Common.Error(
+                "Validation.Failed",
+                $"Task id '{invalidId.Id}' is not a valid GUID."));
+        }
+
         var inputs = request.Tasks.Select(t => new RiskTaskInput(
-            Guid.TryParse(t.Id, out var g) ? g : Guid.Empty,
+            Guid.Parse(t.Id),
             t.Title,
             t.Status,
             t.Priority,

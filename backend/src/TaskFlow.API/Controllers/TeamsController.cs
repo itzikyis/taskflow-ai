@@ -7,6 +7,7 @@ using TaskFlow.Application.Teams.Commands.RemoveMember;
 using TaskFlow.Application.Teams.Commands.UpdateMemberRole;
 using TaskFlow.Application.Teams.Queries.GetAllTeams;
 using TaskFlow.Application.Teams.Queries.GetTeamById;
+using TaskFlow.Application.Teams.Queries.GetTeamWorkload;
 using TaskFlow.Domain.Common;
 using TaskFlow.Domain.ValueObjects;
 
@@ -24,6 +25,15 @@ public sealed class TeamsController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new GetAllTeamsQuery(), cancellationToken);
         return Ok(result.Value);
+    }
+
+    /// <summary>Gets workload data for all team members, optionally scoped to a project.</summary>
+    [HttpGet("workload/{projectId:guid}")]
+    [ProducesResponseType(typeof(TeamWorkloadDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWorkload(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetTeamWorkloadQuery(projectId), cancellationToken);
+        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Gets a team by its unique identifier.</summary>

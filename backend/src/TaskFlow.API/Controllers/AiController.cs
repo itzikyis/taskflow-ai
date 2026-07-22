@@ -12,6 +12,7 @@ using TaskFlow.Application.AI.Queries.GenerateRetrospective;
 using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
+using TaskFlow.Application.AI.Queries.GetDashboardInsights;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 using TaskFlow.Application.AI.Queries.TriageTask;
 
@@ -225,6 +226,17 @@ public sealed class AiController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(
             new AskCopilotQuery(request.Question, tasks, request.ConversationHistory ?? []), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
+
+    /// <summary>Returns an AI-narrated insight summary for the given project's dashboard.</summary>
+    [HttpGet("dashboard-insights/{projectId:guid}")]
+    [ProducesResponseType(typeof(DashboardInsightsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetDashboardInsights(Guid projectId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetDashboardInsightsQuery(projectId), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 }

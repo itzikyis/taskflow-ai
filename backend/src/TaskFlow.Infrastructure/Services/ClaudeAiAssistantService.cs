@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 using TaskFlow.Application.AI.Queries.AskCopilot;
+using TaskFlow.Application.AI.Queries.GetDashboardInsights;
+using TaskFlow.Application.AI.Queries.TriageTask;
 using TaskFlow.Application.Interfaces;
 
 namespace TaskFlow.Infrastructure.Services;
@@ -506,6 +508,141 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
 
     private sealed record CopilotAnswerResponse(string? Answer, List<string>? ReferencedTaskIds);
 
+    /// <inheritdoc/>
+    public async Task<TriageTaskDto> TriageTaskAsync(
+        string taskTitle,
+        string? taskDescription,
+        IReadOnlyList<(Guid Id, string Name)> teamMembers,
+        IReadOnlyList<(string Title, string? Description)> recentTasks,
+        CancellationToken ct)
+    {
+        var taskContext = string.IsNullOrWhiteSpace(taskDescription)
+            ? $"Title: {taskTitle}"
+            : $"Title: {taskTitle}\nDescription: {taskDescription}";
+
+        var memberList = teamMembers.Count > 0
+            ? string.Join("\n", teamMembers.Select(m => $"- id:{m.Id} name:{m.Name}"))
+            : "No team members available.";
+
+        var recentList = recentTasks.Count > 0
+            ? string.Join("\n", recentTasks.Select((t, i) =>
+                $"- {t.Title}: {t.Description ?? "No description"}"))
+            : "No recent tasks.";
+
+        var prompt =
+            "You are a project management assistant performing automated triage for a newly created task.\n\n" +
+            $"NEW TASK:\n{taskContext}\n\n" +
+            $"TEAM MEMBERS:\n{memberList}\n\n" +
+            $"RECENT TASKS IN PROJECT (last 20):\n{recentList}\n\n" +
+            "Your job:\n" +
+            "1. Suggest the best assignee from the team members list based on the task content.\n" +
+            "2. Suggest a priority level: Low, Medium, High, or Urgent.\n" +
+            "3. Flag if this task looks like a duplicate of any recent task.\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"suggestedAssigneeName\": \"Name or null\",\n" +
+            "  \"suggestedAssigneeId\": \"uuid-string or null\",\n" +
+            "  \"suggestedPriority\": \"Low|Medium|High|Urgent\",\n" +
+            "  \"isPossibleDuplicate\": true|false,\n" +
+            "  \"duplicateReason\": \"Explanation or null\",\n" +
+            "  \"reasoning\": \"2-3 sentence explanation of all suggestions\"\n" +
+            "}\n\n" +
+            "Rules:\n" +
+            "- suggestedAssigneeName and suggestedAssigneeId must come from the team members list, or be null if no match.\n" +
+            "- isPossibleDuplicate is true only when the new task clearly overlaps with a recent task in title or intent.\n" +
+            "- duplicateReason must name the similar task when isPossibleDuplicate is true, otherwise null.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 512);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<TriageResponse>(raw, options);
+            if (response is null) return FallbackTriage();
+
+            Guid? assigneeId = Guid.TryParse(response.SuggestedAssigneeId, out var parsed) ? parsed : null;
+
+            return new TriageTaskDto(
+                response.SuggestedAssigneeName,
+                assigneeId,
+                response.SuggestedPriority,
+                response.IsPossibleDuplicate,
+                response.DuplicateReason,
+                response.Reasoning ?? string.Empty);
+        }
+        catch
+        {
+            return FallbackTriage();
+        }
+    }
+
+    private static TriageTaskDto FallbackTriage() =>
+        new(null, null, null, false, null, "AI triage is temporarily unavailable.");
+
+    /// <inheritdoc/>
+    public async Task<DashboardInsightsDto> GenerateDashboardInsightsAsync(
+        int totalTasks,
+        int completedTasks,
+        int inProgressTasks,
+        int overdueTasks,
+        CancellationToken ct)
+    {
+        var completionPct = totalTasks > 0 ? (completedTasks * 100 / totalTasks) : 0;
+
+        var prompt =
+            "You are a project management assistant generating a dashboard health summary.\n\n" +
+            $"Project statistics:\n" +
+            $"- Total tasks: {totalTasks}\n" +
+            $"- Completed: {completedTasks} ({completionPct}%)\n" +
+            $"- In Progress: {inProgressTasks}\n" +
+            $"- Overdue: {overdueTasks}\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"narrative\": \"2-4 sentence natural-language summary of project health\",\n" +
+            "  \"highlights\": [\"bullet insight 1\", \"bullet insight 2\"],\n" +
+            "  \"healthStatus\": \"Healthy|At Risk|Critical\"\n" +
+            "}\n\n" +
+            "Rules:\n" +
+            "- healthStatus is Critical when overdueTasks > 20% of totalTasks or completion < 20%.\n" +
+            "- healthStatus is At Risk when overdueTasks > 10% of totalTasks or completion < 50%.\n" +
+            "- Otherwise healthStatus is Healthy.\n" +
+            "- highlights should contain 2-4 concise observations.";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 512);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<DashboardInsightsResponse>(raw, options);
+            if (response is null) return FallbackDashboardInsights();
+
+            return new DashboardInsightsDto(
+                response.Narrative ?? string.Empty,
+                response.Highlights ?? [],
+                response.HealthStatus ?? "Healthy");
+        }
+        catch
+        {
+            return FallbackDashboardInsights();
+        }
+    }
+
+    private static DashboardInsightsDto FallbackDashboardInsights() =>
+        new("Dashboard insights are temporarily unavailable.", [], "Healthy");
+
+    private sealed record DashboardInsightsResponse(
+        string? Narrative,
+        List<string>? Highlights,
+        string? HealthStatus);
+
+    private sealed record TriageResponse(
+        string? SuggestedAssigneeName,
+        string? SuggestedAssigneeId,
+        string? SuggestedPriority,
+        bool IsPossibleDuplicate,
+        string? DuplicateReason,
+        string? Reasoning);
+
     private sealed record MeetingNotesResponse(
         string? Summary,
         List<string>? KeyDecisions,
@@ -517,6 +654,91 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
         string? Priority,
         string? SuggestedAssignee,
         string? SuggestedDueDate);
+
+    /// <inheritdoc/>
+    public async Task<DashboardInsightsDto> GenerateDashboardInsightsAsync(
+        int totalTasks,
+        int completedTasks,
+        int inProgressTasks,
+        int overdueTasks,
+        CancellationToken ct)
+    {
+        var completionPct = totalTasks == 0 ? 0 : (int)Math.Round(completedTasks * 100.0 / totalTasks);
+
+        var prompt =
+            "You are a project health analyst for TaskFlow AI. Based on the project metrics below, " +
+            "generate a concise dashboard insight summary.\n\n" +
+            "PROJECT METRICS:\n" +
+            $"- Total tasks: {totalTasks}\n" +
+            $"- Completed tasks: {completedTasks} ({completionPct}%)\n" +
+            $"- Tasks in progress: {inProgressTasks}\n" +
+            $"- Overdue tasks: {overdueTasks}\n\n" +
+            "Instructions:\n" +
+            "- Write a 2-4 sentence narrative describing the overall project health\n" +
+            "- Include specific numbers and percentages\n" +
+            "- Highlight risks or areas needing attention\n" +
+            "- health_status must be exactly one of: \"Healthy\", \"At Risk\", or \"Critical\"\n" +
+            "  - Healthy: completion >= 50% and overdue <= 0\n" +
+            "  - At Risk: completion < 50% or overdue > 0\n" +
+            "  - Critical: completion < 20% or overdue > 5\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"narrative\": \"2-4 sentence summary\",\n" +
+            "  \"highlights\": [\"bullet 1\", \"bullet 2\", \"bullet 3\"],\n" +
+            "  \"health_status\": \"Healthy|At Risk|Critical\"\n" +
+            "}";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 512);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<DashboardInsightsResponse>(raw, options);
+            if (response is null) return FallbackDashboardInsights(totalTasks, completedTasks, inProgressTasks, overdueTasks);
+
+            var healthStatus = response.HealthStatus is "Healthy" or "At Risk" or "Critical"
+                ? response.HealthStatus
+                : DetermineHealthStatus(completionPct, overdueTasks);
+
+            return new DashboardInsightsDto(
+                response.Narrative ?? string.Empty,
+                response.Highlights ?? [],
+                healthStatus);
+        }
+        catch
+        {
+            return FallbackDashboardInsights(totalTasks, completedTasks, inProgressTasks, overdueTasks);
+        }
+    }
+
+    private static string DetermineHealthStatus(int completionPct, int overdueTasks) =>
+        overdueTasks > 5 || completionPct < 20 ? "Critical"
+        : overdueTasks > 0 || completionPct < 50 ? "At Risk"
+        : "Healthy";
+
+    private static DashboardInsightsDto FallbackDashboardInsights(
+        int total, int completed, int inProgress, int overdue)
+    {
+        var completionPct = total == 0 ? 0 : (int)Math.Round(completed * 100.0 / total);
+        var health = DetermineHealthStatus(completionPct, overdue);
+        var narrative =
+            $"The project has {total} tasks in total, {completed} of which are completed ({completionPct}%). " +
+            $"There are currently {inProgress} tasks in progress" +
+            (overdue > 0 ? $" and {overdue} overdue task(s) that need attention." : ".");
+        var highlights = new List<string>
+        {
+            $"{completed}/{total} tasks completed ({completionPct}%)",
+            $"{inProgress} task(s) in progress",
+        };
+        if (overdue > 0)
+            highlights.Add($"{overdue} overdue task(s) require immediate attention");
+        return new DashboardInsightsDto(narrative, highlights, health);
+    }
+
+    private sealed record DashboardInsightsResponse(
+        string? Narrative,
+        List<string>? Highlights,
+        string? HealthStatus);
 
     private sealed record RiskAssessmentResponse(
         List<RiskTaskScoreResponse>? Tasks,

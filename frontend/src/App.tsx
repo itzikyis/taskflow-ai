@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { CommandPalette, type Command } from '@/features/command-palette/components/CommandPalette';
 import { TaskListPage } from '@/features/tasks/components/TaskListPage';
 import { ProjectListPage } from '@/features/projects/components/ProjectListPage';
 import { TeamListPage } from '@/features/teams/components/TeamListPage';
@@ -46,10 +47,33 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
 ];
 
 export default function App() {
-  const [view, setView]         = useState<View>('tasks');
-  const [authView, setAuthView] = useState<AuthView>('login');
+  const [view, setView]                   = useState<View>('tasks');
+  const [authView, setAuthView]           = useState<AuthView>('login');
+  const [paletteOpen, setPaletteOpen]     = useState(false);
   const { isAuthenticated, token } = useAuthStore();
   const logout = useLogout();
+
+  const openPalette  = useCallback(() => setPaletteOpen(true),  []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const paletteCommands: Command[] = NAV_ITEMS.map(item => ({
+    id: item.id,
+    icon: item.icon,
+    label: item.label,
+    category: 'Navigation',
+    action: () => setView(item.id),
+  }));
 
   if (!isAuthenticated) {
     return authView === 'login'
@@ -63,6 +87,9 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {paletteOpen && (
+        <CommandPalette commands={paletteCommands} onClose={closePalette} />
+      )}
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside className="app-sidebar">
         <div className="sidebar-logo">
@@ -114,6 +141,36 @@ export default function App() {
             {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={openPalette}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '4px 10px',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                fontSize: 12,
+                fontFamily: 'inherit',
+              }}
+              aria-label="Open command palette"
+              aria-keyshortcuts="Control+K Meta+K"
+            >
+              <span>⌕</span>
+              <span>Search</span>
+              <kbd style={{
+                fontSize: 10,
+                background: 'var(--bg-primary, #1a1a2e)',
+                border: '1px solid var(--border)',
+                borderRadius: 3,
+                padding: '1px 4px',
+                fontFamily: 'monospace',
+              }}>⌘K</kbd>
+            </button>
             <NotificationBell />
             <div className="sidebar-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
               {initials}

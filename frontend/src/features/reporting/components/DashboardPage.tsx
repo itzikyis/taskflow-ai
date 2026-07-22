@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { useDashboardMetrics } from '../hooks/useReporting';
 import type { DashboardMetrics } from '@/services/reportingService';
+import { useProjects } from '@/features/projects/hooks/useProjects';
+import { AiInsightsPanel } from './AiInsightsPanel';
 
 const card = {
   background: '#ffffff',
@@ -11,6 +14,9 @@ const card = {
 
 export function DashboardPage() {
   const { data, isLoading, isError } = useDashboardMetrics();
+  const { data: projects = [] } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const projectId = selectedProjectId || (projects[0]?.id ?? '');
 
   if (isLoading) return <div className="empty-state"><div className="empty-state-icon">⌛</div><p className="empty-state-text">Loading metrics…</p></div>;
   if (isError || !data) return <div className="empty-state"><div className="empty-state-icon">⚠️</div><p className="empty-state-text">Could not load metrics.</p></div>;
@@ -24,7 +30,27 @@ export function DashboardPage() {
           <h1 className="page-title">Dashboard 📊</h1>
           <p className="page-subtitle">{data.total} tasks · {pct(data.done)}% complete</p>
         </div>
+        {projects.length > 1 && (
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border-color)' }}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        )}
       </div>
+
+      {projectId
+        ? <AiInsightsPanel projectId={projectId} />
+        : (
+          <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 18, marginBottom: 24, color: 'var(--text-muted)', fontSize: 13 }}>
+            ✨ Select a project to see AI insights.
+          </div>
+        )
+      }
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20, marginBottom: 28 }}>

@@ -41,6 +41,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Enable request body buffering so the Slack command endpoint can re-read the
+// raw body when computing the HMAC-SHA256 signing-secret verification.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/slack/command"))
+        context.Request.EnableBuffering();
+    await next();
+});
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors("Frontend");
 app.UseHttpsRedirection();

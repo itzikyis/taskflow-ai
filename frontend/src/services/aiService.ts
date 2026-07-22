@@ -95,6 +95,10 @@ export const aiService = {
     const { data } = await axios.post<SprintPlan>('/api/ai/sprint-plan', { backlog, sprintCapacity });
     return data;
   },
+  getDashboardInsights: async (projectId: string): Promise<DashboardInsightsDto> => {
+    const { data } = await axios.get<DashboardInsightsDto>(`/api/ai/dashboard-insights/${projectId}`);
+    return data;
+  },
 };
 
 export interface SprintTaskSuggestion {
@@ -167,4 +171,10 @@ export interface RiskTaskInput {
   dueDate?: string | null;
   updatedAt?: string | null;
   openBlockerCount: number;
+}
+
+export interface DashboardInsightsDto {
+  narrative: string;
+  highlights: string[];
+  healthStatus: string;
 }

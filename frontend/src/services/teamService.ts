@@ -3,6 +3,20 @@ import type { Team, CreateTeamPayload, AddMemberPayload, TeamRole } from '@/feat
 
 const BASE = '/api/teams';
 
+export interface MemberWorkloadDto {
+  userId: string;
+  displayName: string;
+  openTasks: number;
+  inProgressTasks: number;
+  completedTasks: number;
+  totalAssigned: number;
+}
+
+export interface TeamWorkloadDto {
+  members: MemberWorkloadDto[];
+  unassignedTasks: number;
+}
+
 export const teamService = {
   getAll: async (): Promise<Team[]> => {
     const { data } = await axios.get<Team[]>(BASE);
@@ -33,5 +47,10 @@ export const teamService = {
 
   updateMemberRole: async (teamId: string, userId: string, role: TeamRole): Promise<void> => {
     await axios.put(`${BASE}/${teamId}/members/${userId}/role`, { role });
+  },
+
+  getTeamWorkload: async (projectId: string): Promise<TeamWorkloadDto> => {
+    const { data } = await axios.get<TeamWorkloadDto>(`${BASE}/workload/${projectId}`);
+    return data;
   },
 };

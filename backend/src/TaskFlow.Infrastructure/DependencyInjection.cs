@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using TaskFlow.Application.Interfaces;
+using TaskFlow.Application.Slack;
 using TaskFlow.Infrastructure.Persistence;
 using TaskFlow.Infrastructure.Persistence.Repositories;
 using TaskFlow.Infrastructure.Services;
@@ -45,6 +46,7 @@ public static class DependencyInjection
         services.AddSingleton<IGitHubWebhookParser, GitHubWebhookParser>();
         services.AddSingleton<ICalendarFeedBuilder, RfcCalendarFeedBuilder>();
         services.AddScoped<ISlackIntegrationRepository, SlackIntegrationRepository>();
+        services.AddSingleton<ISlackOptions, SlackOptions>();
         services.AddHttpClient<IExternalNotificationService, SlackNotificationService>();
         services.AddSingleton<ITaskSearchInterpreter, KeywordTaskSearchInterpreter>();
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();

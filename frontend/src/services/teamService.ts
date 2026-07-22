@@ -34,4 +34,8 @@ export const teamService = {
   updateMemberRole: async (teamId: string, userId: string, role: TeamRole): Promise<void> => {
     await axios.put(`${BASE}/${teamId}/members/${userId}/role`, { role });
   },
+
+  rename: async (teamId: string, name: string): Promise<void> => {
+    await axios.patch(`${BASE}/${teamId}/name`, { name });
+  },
 };

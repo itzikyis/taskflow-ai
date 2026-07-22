@@ -49,6 +49,19 @@ public sealed class Team : AggregateRoot
         Description = description?.Trim();
     }
 
+    /// <summary>Renames the team to the specified <paramref name="name"/>.</summary>
+    public Result Rename(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result.Failure(TeamErrors.NameEmpty);
+
+        if (name.Length > 100)
+            return Result.Failure(TeamErrors.NameTooLong);
+
+        Name = name.Trim();
+        return Result.Ok;
+    }
+
     /// <summary>Adds a user to the team with the specified role.</summary>
     public Result AddMember(Guid userId, TeamRole role)
     {

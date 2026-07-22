@@ -4,6 +4,7 @@ using TaskFlow.Application.Teams.Commands.AddMember;
 using TaskFlow.Application.Teams.Commands.CreateTeam;
 using TaskFlow.Application.Teams.Commands.DeleteTeam;
 using TaskFlow.Application.Teams.Commands.RemoveMember;
+using TaskFlow.Application.Teams.Commands.RenameTeam;
 using TaskFlow.Application.Teams.Commands.UpdateMemberRole;
 using TaskFlow.Application.Teams.Queries.GetAllTeams;
 using TaskFlow.Application.Teams.Queries.GetTeamById;
@@ -51,6 +52,27 @@ public sealed class TeamsController(IMediator mediator) : ControllerBase
         return result.IsFailure
             ? BadRequest(result.Error)
             : CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
+    }
+
+    /// <summary>Renames a team.</summary>
+    [HttpPatch("{id:guid}/name")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Rename(
+        Guid id,
+        [FromBody] RenameTeamRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new RenameTeamCommand(id, request.Name), cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TeamErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+
+        return NoContent();
     }
 
     /// <summary>Deletes a team by its unique identifier.</summary>
@@ -147,3 +169,6 @@ public sealed record AddMemberRequest(string UserId, TeamRole Role);
 
 /// <summary>Payload for updating a team member's role.</summary>
 public sealed record UpdateMemberRoleRequest(TeamRole Role);
+
+/// <summary>Payload for renaming a team.</summary>
+public sealed record RenameTeamRequest(string Name);

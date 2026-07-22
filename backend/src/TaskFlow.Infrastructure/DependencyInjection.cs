@@ -48,6 +48,8 @@ public static class DependencyInjection
         services.AddHttpClient<IExternalNotificationService, SlackNotificationService>();
         services.AddSingleton<ITaskSearchInterpreter, KeywordTaskSearchInterpreter>();
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();
+        services.AddScoped<ICalendarSubscriptionRepository, CalendarSubscriptionRepository>();
+        services.AddHttpClient<ICalendarImportService, ICalFeedImportService>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtService, JwtService>();

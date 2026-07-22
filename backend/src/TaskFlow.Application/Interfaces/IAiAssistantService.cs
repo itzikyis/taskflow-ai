@@ -62,4 +62,33 @@ public interface IAiAssistantService
         IReadOnlyList<Application.AI.Queries.AskCopilot.CopilotTaskContext> tasks,
         IReadOnlyList<string> conversationHistory,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Triages a newly created task by suggesting the best assignee from the team,
+    /// a priority level, and flagging potential duplicates among recent project tasks.
+    /// </summary>
+    /// <param name="taskTitle">The title of the task to triage.</param>
+    /// <param name="taskDescription">The optional description of the task.</param>
+    /// <param name="teamMembers">Available team members as (Id, DisplayName) pairs.</param>
+    /// <param name="recentTasks">Recent tasks in the project as (Title, Description) pairs for duplicate detection.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<Application.AI.Queries.TriageTask.TriageTaskDto> TriageTaskAsync(
+        string taskTitle,
+        string? taskDescription,
+        IReadOnlyList<(Guid Id, string Name)> teamMembers,
+        IReadOnlyList<(string Title, string? Description)> recentTasks,
+        CancellationToken ct = default);
+
+    /// <summary>Generates an AI-narrated insight summary from computed dashboard statistics.</summary>
+    /// <param name="totalTasks">Total number of tasks in the project.</param>
+    /// <param name="completedTasks">Number of tasks with status Done.</param>
+    /// <param name="inProgressTasks">Number of tasks currently In Progress.</param>
+    /// <param name="overdueTasks">Number of non-done tasks whose due date has passed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<Application.AI.Queries.GetDashboardInsights.DashboardInsightsDto> GenerateDashboardInsightsAsync(
+        int totalTasks,
+        int completedTasks,
+        int inProgressTasks,
+        int overdueTasks,
+        CancellationToken ct = default);
 }

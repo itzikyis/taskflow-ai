@@ -13,6 +13,7 @@ using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
+using TaskFlow.Application.AI.Queries.TriageTask;
 
 namespace TaskFlow.API.Controllers;
 
@@ -188,6 +189,27 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(
             new AnalyzeMeetingNotesQuery(request.Transcript, request.Participants ?? []), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
+
+    /// <summary>Triages a newly created task: suggests assignee, priority, and flags potential duplicates.</summary>
+    [HttpGet("triage/{taskId:guid}")]
+    [ProducesResponseType(typeof(TriageTaskDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> TriageTask(
+        Guid taskId,
+        [FromQuery] Guid projectId,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new TriageTaskQuery(taskId, projectId), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == "Triage.TaskNotFound")
+                return NotFound(result.Error);
+            return MapFailure(result.Error);
+        }
+        return Ok(result.Value);
     }
 
     /// <summary>Asks the AI copilot a natural-language question about project status.</summary>

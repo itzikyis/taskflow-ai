@@ -84,4 +84,62 @@ public sealed class IngestGitHubEventCommandHandlerTests
         existing.Status.Should().Be(DevelopmentLinkStatus.Merged);
         await _repo.DidNotReceive().AddAsync(Arg.Any<TaskDevelopmentLink>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Handle_MergedPr_TransitionsInProgressTaskToInReview()
+    {
+        var task = TaskItem.Create("Task", null, TaskPriority.Medium, Guid.NewGuid()).Value!;
+        // Advance task to InProgress so the transition to InReview is valid.
+        task.TransitionTo(TaskItemStatus.InProgress);
+
+        var mergedRef = RefFor(task.Id) with { Status = DevelopmentLinkStatus.Merged };
+        _parser.Parse("pull_request", Arg.Any<string>()).Returns(new[] { mergedRef });
+        _tasks.GetByIdAsync(task.Id, Arg.Any<CancellationToken>()).Returns(task);
+        _repo.FindByExternalRefAsync(task.Id, "owner/repo", "7", Arg.Any<CancellationToken>())
+             .Returns((TaskDevelopmentLink?)null);
+
+        await _sut.Handle(new IngestGitHubEventCommand("pull_request", "{}"), CancellationToken.None);
+
+        task.Status.Should().Be(TaskItemStatus.InReview);
+        _tasks.Received(1).Update(task);
+    }
+
+    [Fact]
+    public async Task Handle_MergedPr_SkipsTransitionWhenTaskAlreadyDone()
+    {
+        var task = TaskItem.Create("Task", null, TaskPriority.Medium, Guid.NewGuid()).Value!;
+        // Advance to Done — no valid transition to InReview from Done.
+        task.TransitionTo(TaskItemStatus.InProgress);
+        task.TransitionTo(TaskItemStatus.Done);
+
+        var mergedRef = RefFor(task.Id) with { Status = DevelopmentLinkStatus.Merged };
+        _parser.Parse("pull_request", Arg.Any<string>()).Returns(new[] { mergedRef });
+        _tasks.GetByIdAsync(task.Id, Arg.Any<CancellationToken>()).Returns(task);
+        _repo.FindByExternalRefAsync(task.Id, "owner/repo", "7", Arg.Any<CancellationToken>())
+             .Returns((TaskDevelopmentLink?)null);
+
+        var result = await _sut.Handle(new IngestGitHubEventCommand("pull_request", "{}"), CancellationToken.None);
+
+        // Link is still created; the status transition is silently skipped.
+        result.IsSuccess.Should().BeTrue();
+        task.Status.Should().Be(TaskItemStatus.Done);
+        _tasks.DidNotReceive().Update(Arg.Any<TaskItem>());
+    }
+
+    [Fact]
+    public async Task Handle_OpenPr_DoesNotTransitionTaskStatus()
+    {
+        var task = TaskItem.Create("Task", null, TaskPriority.Medium, Guid.NewGuid()).Value!;
+        task.TransitionTo(TaskItemStatus.InProgress);
+
+        _parser.Parse("pull_request", Arg.Any<string>()).Returns(new[] { RefFor(task.Id) }); // Open status
+        _tasks.GetByIdAsync(task.Id, Arg.Any<CancellationToken>()).Returns(task);
+        _repo.FindByExternalRefAsync(task.Id, "owner/repo", "7", Arg.Any<CancellationToken>())
+             .Returns((TaskDevelopmentLink?)null);
+
+        await _sut.Handle(new IngestGitHubEventCommand("pull_request", "{}"), CancellationToken.None);
+
+        task.Status.Should().Be(TaskItemStatus.InProgress);
+        _tasks.DidNotReceive().Update(Arg.Any<TaskItem>());
+    }
 }

@@ -17,7 +17,7 @@ export interface LogActivityPayload {
 
 export const activityService = {
   getRecent: async (page = 1, pageSize = 50): Promise<ActivityLog[]> => {
-    const { data } = await axios.get<ActivityLog[]>(BASE, { params: { page, pageSize } });
+    const { data } = await axios.get<ActivityLog[]>(`${BASE}/recent`, { params: { page, pageSize } });
     return data;
   },
 

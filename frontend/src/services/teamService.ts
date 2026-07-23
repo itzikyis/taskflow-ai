@@ -49,6 +49,10 @@ export const teamService = {
     await axios.put(`${BASE}/${teamId}/members/${userId}/role`, { role });
   },
 
+  rename: async (teamId: string, name: string): Promise<void> => {
+    await axios.patch(`${BASE}/${teamId}/name`, { name });
+  },
+
   getTeamWorkload: async (projectId: string): Promise<TeamWorkloadDto> => {
     const { data } = await axios.get<TeamWorkloadDto>(`${BASE}/workload/${projectId}`);
     return data;

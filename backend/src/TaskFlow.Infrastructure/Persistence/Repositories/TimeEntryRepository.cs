@@ -19,6 +19,13 @@ internal sealed class TimeEntryRepository(ApplicationDbContext context) : ITimeE
     public async Task<int> GetTotalMinutesByTaskAsync(Guid taskId, CancellationToken ct = default) =>
         await context.TimeEntries.Where(e => e.TaskId == taskId).SumAsync(e => e.Minutes, ct);
 
+    public async Task<IReadOnlyList<TimeEntry>> GetByUserAndDateRangeAsync(
+        Guid userId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await context.TimeEntries
+            .Where(e => e.UserId == userId && e.LoggedAt >= from && e.LoggedAt <= to)
+            .OrderBy(e => e.LoggedAt)
+            .ToListAsync(ct);
+
     public async Task AddAsync(TimeEntry entry, CancellationToken ct = default) =>
         await context.TimeEntries.AddAsync(entry, ct);
 

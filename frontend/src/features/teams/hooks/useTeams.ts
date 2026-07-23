@@ -35,6 +35,15 @@ export function useDeleteTeam() {
   });
 }
 
+export function useRenameTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ teamId, name }: { teamId: string; name: string }) =>
+      teamService.rename(teamId, name),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [TEAMS_KEY] }),
+  });
+}
+
 export function useAddMember(teamId: string) {
   const queryClient = useQueryClient();
   return useMutation({

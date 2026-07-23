@@ -3,12 +3,14 @@ using Microsoft.Extensions.Logging;
 using TaskFlow.Application.Interfaces;
 using TaskFlow.Domain.Common;
 using TaskFlow.Domain.Entities;
+using TaskFlow.Domain.ValueObjects;
 
 namespace TaskFlow.Application.DevelopmentLinks.Commands.IngestGitHubEvent;
 
 /// <summary>
 /// Handles <see cref="IngestGitHubEventCommand"/>: parses the payload, detects
-/// task references, and upserts a development link for each referenced task.
+/// task references, upserts a development link for each referenced task, and
+/// auto-transitions task status when a pull request is merged.
 /// </summary>
 public sealed class IngestGitHubEventCommandHandler(
     IGitHubWebhookParser parser,
@@ -42,7 +44,8 @@ public sealed class IngestGitHubEventCommandHandler(
             foreach (var taskId in taskIds)
             {
                 // Only link references to tasks that actually exist.
-                if (await taskRepository.GetByIdAsync(taskId, ct) is null)
+                var task = await taskRepository.GetByIdAsync(taskId, ct);
+                if (task is null)
                     continue;
 
                 if (!string.IsNullOrWhiteSpace(reference.ExternalId))
@@ -54,6 +57,7 @@ public sealed class IngestGitHubEventCommandHandler(
                     {
                         existing.Update(reference.Status, reference.Title);
                         upserted++;
+                        TryAutoTransition(task, reference.Status);
                         continue;
                     }
                 }
@@ -67,6 +71,7 @@ public sealed class IngestGitHubEventCommandHandler(
 
                 await repo.AddAsync(created.Value!, ct);
                 upserted++;
+                TryAutoTransition(task, reference.Status);
             }
         }
 
@@ -74,5 +79,30 @@ public sealed class IngestGitHubEventCommandHandler(
             await repo.SaveChangesAsync(ct);
 
         return Result<int>.Success(upserted);
+    }
+
+    /// <summary>
+    /// Attempts to auto-transition the task to <see cref="TaskItemStatus.InReview"/> when a
+    /// linked pull request is merged. The transition is a best-effort operation: if the task
+    /// is not in a state that allows the transition (e.g. already Done) it is silently skipped.
+    /// </summary>
+    private void TryAutoTransition(TaskItem task, DevelopmentLinkStatus linkStatus)
+    {
+        if (linkStatus != DevelopmentLinkStatus.Merged)
+            return;
+
+        var result = task.TransitionTo(TaskItemStatus.InReview);
+        if (result.IsFailure)
+        {
+            logger.LogDebug(
+                "Could not auto-transition task {TaskId} to InReview: {Error}",
+                task.Id, result.Error.Description);
+        }
+        else
+        {
+            taskRepository.Update(task);
+            logger.LogInformation(
+                "Auto-transitioned task {TaskId} to InReview after PR merge.", task.Id);
+        }
     }
 }

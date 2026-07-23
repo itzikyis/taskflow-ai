@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Integrations.Slack;
 using TaskFlow.Application.Integrations.Slack.DeleteSlackConfig;
+using TaskFlow.Application.Integrations.Slack.GetSlackCommandConfig;
 using TaskFlow.Application.Integrations.Slack.GetSlackConfig;
 using TaskFlow.Application.Integrations.Slack.SaveSlackConfig;
 using TaskFlow.Application.Integrations.Slack.SendSlackTest;
@@ -15,6 +16,12 @@ namespace TaskFlow.API.Controllers;
 [Authorize]
 public sealed class SlackController(IMediator mediator) : ControllerBase
 {
+    /// <summary>Returns whether the Slack slash-command signing secret is configured.</summary>
+    [HttpGet("command-config")]
+    [ProducesResponseType(typeof(SlackCommandConfigDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCommandConfig(CancellationToken ct)
+        => Ok(await mediator.Send(new GetSlackCommandConfigQuery(), ct));
+
     /// <summary>Gets the current Slack integration config (webhook URL masked).</summary>
     [HttpGet]
     [ProducesResponseType(typeof(SlackConfigDto), StatusCodes.Status200OK)]

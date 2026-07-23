@@ -79,6 +79,21 @@ public interface IAiAssistantService
         IReadOnlyList<(string Title, string? Description)> recentTasks,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Generates an AI-written project status digest covering a rolling time window.
+    /// </summary>
+    /// <param name="periodLabel">Human-readable period label, e.g. "Last 7 days".</param>
+    /// <param name="completed">Task titles completed within the period.</param>
+    /// <param name="inProgress">Task titles currently in progress.</param>
+    /// <param name="blockers">Task titles that are overdue or blocked.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<Application.AI.Queries.GetStatusDigest.StatusDigestDto> GenerateStatusDigestAsync(
+        string periodLabel,
+        IReadOnlyList<string> completed,
+        IReadOnlyList<string> inProgress,
+        IReadOnlyList<string> blockers,
+        CancellationToken ct = default);
+
     /// <summary>Generates an AI-narrated insight summary from computed dashboard statistics.</summary>
     /// <param name="totalTasks">Total number of tasks in the project.</param>
     /// <param name="completedTasks">Number of tasks with status Done.</param>

@@ -13,6 +13,7 @@ using TaskFlow.Application.AI.Queries.SuggestSprintPlan;
 using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.GetDashboardInsights;
+using TaskFlow.Application.AI.Queries.GetStatusDigest;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 using TaskFlow.Application.AI.Queries.TriageTask;
 
@@ -226,6 +227,20 @@ public sealed class AiController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(
             new AskCopilotQuery(request.Question, tasks, request.ConversationHistory ?? []), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
+
+    /// <summary>Returns an AI-generated project status digest for the given project.</summary>
+    [HttpGet("status-digest/{projectId:guid}")]
+    [ProducesResponseType(typeof(StatusDigestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetStatusDigest(
+        Guid projectId,
+        [FromQuery] int periodDays = 7,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetStatusDigestQuery(projectId, periodDays), ct);
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 

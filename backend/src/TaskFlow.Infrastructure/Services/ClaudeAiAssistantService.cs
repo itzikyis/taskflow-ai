@@ -6,6 +6,7 @@ using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Queries.AssessSprintRisk;
 using TaskFlow.Application.AI.Queries.AskCopilot;
 using TaskFlow.Application.AI.Queries.GetDashboardInsights;
+using TaskFlow.Application.AI.Queries.GetStatusDigest;
 using TaskFlow.Application.AI.Queries.TriageTask;
 using TaskFlow.Application.Interfaces;
 
@@ -678,6 +679,94 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
             highlights.Add($"{overdue} overdue task(s) require immediate attention");
         return new DashboardInsightsDto(narrative, highlights, health);
     }
+
+    /// <inheritdoc/>
+    public async Task<StatusDigestDto> GenerateStatusDigestAsync(
+        string periodLabel,
+        IReadOnlyList<string> completed,
+        IReadOnlyList<string> inProgress,
+        IReadOnlyList<string> blockers,
+        CancellationToken ct)
+    {
+        var completedList = completed.Count > 0
+            ? string.Join(", ", completed.Select(t => $"\"{t}\""))
+            : "none";
+        var inProgressList = inProgress.Count > 0
+            ? string.Join(", ", inProgress.Select(t => $"\"{t}\""))
+            : "none";
+        var blockerList = blockers.Count > 0
+            ? string.Join(", ", blockers.Select(t => $"\"{t}\""))
+            : "none";
+
+        var prompt =
+            "You are a project status analyst for TaskFlow AI. Based on the task data below, " +
+            "write a concise project status digest.\n\n" +
+            $"PERIOD: {periodLabel}\n" +
+            $"COMPLETED TASKS: {completedList}\n" +
+            $"IN-PROGRESS TASKS: {inProgressList}\n" +
+            $"BLOCKERS / OVERDUE: {blockerList}\n\n" +
+            "Instructions:\n" +
+            "- Write a 3-5 sentence narrative describing overall project health and progress\n" +
+            "- Be specific — mention task names where relevant\n" +
+            "- health_status must be exactly one of: \"Healthy\", \"At Risk\", or \"Critical\"\n" +
+            "  - Healthy: no blockers and at least some tasks completed or in progress\n" +
+            "  - At Risk: 1-5 blockers or no completed tasks\n" +
+            "  - Critical: more than 5 blockers or no activity at all\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"narrative\": \"3-5 sentence summary\",\n" +
+            "  \"health_status\": \"Healthy|At Risk|Critical\"\n" +
+            "}";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 512);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<StatusDigestResponse>(raw, options);
+            if (response is null)
+                return FallbackStatusDigest(periodLabel, completed, inProgress, blockers);
+
+            var healthStatus = response.HealthStatus is "Healthy" or "At Risk" or "Critical"
+                ? response.HealthStatus
+                : DetermineStatusDigestHealth(blockers.Count, completed.Count);
+
+            return new StatusDigestDto(
+                periodLabel,
+                [.. completed],
+                [.. inProgress],
+                [.. blockers],
+                response.Narrative ?? string.Empty,
+                healthStatus);
+        }
+        catch
+        {
+            return FallbackStatusDigest(periodLabel, completed, inProgress, blockers);
+        }
+    }
+
+    private static string DetermineStatusDigestHealth(int blockerCount, int completedCount) =>
+        blockerCount > 5 ? "Critical"
+        : blockerCount > 0 || completedCount == 0 ? "At Risk"
+        : "Healthy";
+
+    private static StatusDigestDto FallbackStatusDigest(
+        string periodLabel,
+        IReadOnlyList<string> completed,
+        IReadOnlyList<string> inProgress,
+        IReadOnlyList<string> blockers)
+    {
+        var health = DetermineStatusDigestHealth(blockers.Count, completed.Count);
+        var narrative =
+            $"During the {periodLabel.ToLowerInvariant()}, {completed.Count} task(s) were completed. " +
+            $"There are currently {inProgress.Count} task(s) in progress" +
+            (blockers.Count > 0
+                ? $" and {blockers.Count} overdue task(s) that require immediate attention."
+                : ".");
+        return new StatusDigestDto(periodLabel, [.. completed], [.. inProgress], [.. blockers], narrative, health);
+    }
+
+    private sealed record StatusDigestResponse(string? Narrative, string? HealthStatus);
 
     private sealed record DashboardInsightsResponse(
         string? Narrative,

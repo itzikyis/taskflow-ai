@@ -579,62 +579,6 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
     private static TriageTaskDto FallbackTriage() =>
         new(null, null, null, false, null, "AI triage is temporarily unavailable.");
 
-    /// <inheritdoc/>
-    public async Task<DashboardInsightsDto> GenerateDashboardInsightsAsync(
-        int totalTasks,
-        int completedTasks,
-        int inProgressTasks,
-        int overdueTasks,
-        CancellationToken ct)
-    {
-        var completionPct = totalTasks > 0 ? (completedTasks * 100 / totalTasks) : 0;
-
-        var prompt =
-            "You are a project management assistant generating a dashboard health summary.\n\n" +
-            $"Project statistics:\n" +
-            $"- Total tasks: {totalTasks}\n" +
-            $"- Completed: {completedTasks} ({completionPct}%)\n" +
-            $"- In Progress: {inProgressTasks}\n" +
-            $"- Overdue: {overdueTasks}\n\n" +
-            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
-            "{\n" +
-            "  \"narrative\": \"2-4 sentence natural-language summary of project health\",\n" +
-            "  \"highlights\": [\"bullet insight 1\", \"bullet insight 2\"],\n" +
-            "  \"healthStatus\": \"Healthy|At Risk|Critical\"\n" +
-            "}\n\n" +
-            "Rules:\n" +
-            "- healthStatus is Critical when overdueTasks > 20% of totalTasks or completion < 20%.\n" +
-            "- healthStatus is At Risk when overdueTasks > 10% of totalTasks or completion < 50%.\n" +
-            "- Otherwise healthStatus is Healthy.\n" +
-            "- highlights should contain 2-4 concise observations.";
-
-        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 512);
-
-        try
-        {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var response = JsonSerializer.Deserialize<DashboardInsightsResponse>(raw, options);
-            if (response is null) return FallbackDashboardInsights();
-
-            return new DashboardInsightsDto(
-                response.Narrative ?? string.Empty,
-                response.Highlights ?? [],
-                response.HealthStatus ?? "Healthy");
-        }
-        catch
-        {
-            return FallbackDashboardInsights();
-        }
-    }
-
-    private static DashboardInsightsDto FallbackDashboardInsights() =>
-        new("Dashboard insights are temporarily unavailable.", [], "Healthy");
-
-    private sealed record DashboardInsightsResponse(
-        string? Narrative,
-        List<string>? Highlights,
-        string? HealthStatus);
-
     private sealed record TriageResponse(
         string? SuggestedAssigneeName,
         string? SuggestedAssigneeId,

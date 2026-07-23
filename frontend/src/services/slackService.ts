@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+export interface SlackCommandConfigDto {
+  isConfigured: boolean;
+}
+
 export interface SlackConfig {
   configured: boolean;
   enabled: boolean;
@@ -26,4 +30,6 @@ export const slackService = {
   save: async (config: SaveSlackConfig): Promise<void> => { await axios.put(BASE, config); },
   test: async (): Promise<void> => { await axios.post(`${BASE}/test`); },
   remove: async (): Promise<void> => { await axios.delete(BASE); },
+  getCommandConfig: async (): Promise<SlackCommandConfigDto> =>
+    (await axios.get<SlackCommandConfigDto>(`${BASE}/command-config`)).data,
 };

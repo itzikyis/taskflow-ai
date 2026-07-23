@@ -99,6 +99,13 @@ export const aiService = {
     const { data } = await axios.get<DashboardInsightsDto>(`/api/ai/dashboard-insights/${projectId}`);
     return data;
   },
+  getStatusDigest: async (projectId: string, periodDays = 7): Promise<StatusDigestDto> => {
+    const { data } = await axios.get<StatusDigestDto>(
+      `/api/ai/status-digest/${projectId}`,
+      { params: { periodDays } },
+    );
+    return data;
+  },
 };
 
 export interface SprintTaskSuggestion {
@@ -176,5 +183,14 @@ export interface RiskTaskInput {
 export interface DashboardInsightsDto {
   narrative: string;
   highlights: string[];
+  healthStatus: string;
+}
+
+export interface StatusDigestDto {
+  periodLabel: string;
+  completed: string[];
+  inProgress: string[];
+  blockers: string[];
+  aiNarrative: string;
   healthStatus: string;
 }

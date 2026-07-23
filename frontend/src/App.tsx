@@ -23,8 +23,9 @@ import { AutomationsPage } from '@/features/automations/components/AutomationsPa
 import { InitiativesPage } from '@/features/initiatives/components/InitiativesPage';
 import { ProjectDocsPage } from '@/features/project-docs/components/ProjectDocsPage';
 import { TimesheetPage } from '@/features/time-tracking/components/TimesheetPage';
+import { WorkloadPage } from '@/features/reporting/components/WorkloadPage';
 
-type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -46,6 +47,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'initiatives',  icon: '🗺', label: 'Initiatives'  },
   { id: 'project-docs', icon: '📄', label: 'Project Docs' },
   { id: 'timesheet', icon: '⏱️', label: 'Timesheets' },
+  { id: 'workload', icon: '👥', label: 'Team Workload' },
 ];
 
 export default function App() {
@@ -140,7 +142,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -202,6 +204,7 @@ export default function App() {
           {view === 'initiatives'    && <InitiativesPage />}
           {view === 'project-docs'   && <ProjectDocsPage />}
           {view === 'timesheet'      && <TimesheetPage />}
+          {view === 'workload'       && <WorkloadPage />}
         </main>
       </div>
     </div>

@@ -34,7 +34,7 @@ public sealed class ActivityLogsController(IMediator mediator) : ControllerBase
     /// <param name="pageSize">The number of results per page (default: 50).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paged list of activity log entries.</returns>
-    [HttpGet]
+    [HttpGet("recent")]
     [ProducesResponseType(typeof(IReadOnlyList<ActivityLogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRecent(
         [FromQuery] int page = 1,

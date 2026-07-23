@@ -31,6 +31,30 @@ export const timeService = {
   },
 };
 
+// ── Timesheet ─────────────────────────────────────────────────────────────────
+
+export interface TimesheetRowDto {
+  taskId: string;
+  taskTitle: string;
+  hoursByDay: number[];
+}
+
+export interface TimesheetDto {
+  weekStart: string;
+  rows: TimesheetRowDto[];
+  totalByDay: number[];
+  grandTotal: number;
+}
+
+export const timesheetService = {
+  getTimesheet: async (userId: string, weekStart: string): Promise<TimesheetDto> => {
+    const { data } = await axios.get<TimesheetDto>('/api/time-entries/timesheet', {
+      params: { userId, weekStart },
+    });
+    return data;
+  },
+};
+
 /** Formats minutes as "2h 30m" / "45m". */
 export function formatMinutes(total: number): string {
   const h = Math.floor(total / 60);

@@ -6,6 +6,7 @@ using TaskFlow.Application.TimeTracking.Commands.DeleteTimeEntry;
 using TaskFlow.Application.TimeTracking.Commands.LogTime;
 using TaskFlow.Application.TimeTracking.Dtos;
 using TaskFlow.Application.TimeTracking.Queries.GetTaskTimeSummary;
+using TaskFlow.Application.TimeTracking.Queries.GetTimesheet;
 using TaskFlow.Domain.Common;
 
 namespace TaskFlow.API.Controllers;
@@ -19,6 +20,21 @@ public sealed class TimeEntriesController(IMediator mediator) : ControllerBase
     {
         var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         return Guid.TryParse(sub, out var id) ? id : null;
+    }
+
+    /// <summary>Returns a weekly timesheet grid for a user (one row per task, columns = Mon–Sun).</summary>
+    [HttpGet("time-entries/timesheet")]
+    [Authorize]
+    [ProducesResponseType(typeof(TimesheetDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetTimesheet(
+        [FromQuery] Guid userId,
+        [FromQuery] DateOnly weekStart,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetTimesheetQuery(userId, weekStart), ct);
+        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
 
     /// <summary>Gets all time entries and the total logged for a task.</summary>

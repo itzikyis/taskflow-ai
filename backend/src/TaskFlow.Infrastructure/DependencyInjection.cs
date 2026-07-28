@@ -46,12 +46,14 @@ public static class DependencyInjection
         services.AddScoped<ICustomFieldRepository, CustomFieldRepository>();
         services.AddSingleton<IGitHubWebhookParser, GitHubWebhookParser>();
         services.AddSingleton<ICalendarFeedBuilder, RfcCalendarFeedBuilder>();
+        services.AddScoped<IGoalRepository, GoalRepository>();
         services.AddScoped<ISlackIntegrationRepository, SlackIntegrationRepository>();
         services.AddSingleton<ISlackOptions, SlackOptions>();
         services.AddHttpClient<IExternalNotificationService, SlackNotificationService>();
         services.AddSingleton<ITaskSearchInterpreter, KeywordTaskSearchInterpreter>();
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();
         services.AddScoped<ICalendarSubscriptionRepository, CalendarSubscriptionRepository>();
+        services.AddScoped<ITaskTemplateRepository, TaskTemplateRepository>();
         services.AddHttpClient<ICalendarImportService, ICalFeedImportService>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

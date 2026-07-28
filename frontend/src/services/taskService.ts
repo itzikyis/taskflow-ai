@@ -4,6 +4,7 @@ import type {
   CreateTaskPayload,
   UpdateTaskPayload,
   UpdateStatusPayload,
+  UpdatePriorityPayload,
   MoveToColumnPayload,
 } from '@/features/tasks/types/task.types';
 
@@ -32,6 +33,10 @@ export const taskService = {
 
   updateStatus: async (id: string, payload: UpdateStatusPayload): Promise<void> => {
     await axios.patch(`${BASE}/${id}/status`, payload);
+  },
+
+  updatePriority: async (id: string, payload: UpdatePriorityPayload): Promise<void> => {
+    await axios.patch(`${BASE}/${id}/priority`, payload);
   },
 
   moveToColumn: async (id: string, payload: MoveToColumnPayload): Promise<void> => {

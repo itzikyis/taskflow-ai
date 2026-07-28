@@ -7,13 +7,28 @@ import { projectDocService, type ProjectDocumentDto } from '@/services/projectDo
 // ── Simple markdown renderer ──────────────────────────────────────────────────
 // Renders headings, bold, italic, inline code, code blocks, lists, and links.
 
+function escHtml(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeUrl(url: string): string {
+  // Only allow http/https — block javascript: and data: URIs
+  return /^https?:\/\//i.test(url.trim()) ? url.trim() : '#';
+}
+
 function renderMarkdown(text: string): string {
-  return text
-    // Code blocks
-    .replace(/```[\s\S]*?```/g, m => {
-      const code = m.slice(3, -3).replace(/^[^\n]*\n/, '');
-      return `<pre style="background:var(--bg-surface,#f9fafb);border:1px solid var(--border-default);border-radius:6px;padding:12px;overflow-x:auto;font-size:13px;"><code>${escHtml(code)}</code></pre>`;
-    })
+  // Escape the raw text first, then selectively re-introduce safe HTML tags.
+  // This prevents stored XSS from user-controlled content.
+  const escaped = escHtml(text);
+  return escaped
+    // Code blocks (content is already escaped)
+    .replace(/```([\s\S]*?)```/g, (_m, code) =>
+      `<pre style="background:var(--surface-bg);border:1px solid var(--surface-border);border-radius:6px;padding:12px;overflow-x:auto;font-size:13px;"><code>${code}</code></pre>`)
     // Headings
     .replace(/^### (.+)$/gm, '<h3 style="font-size:15px;margin:16px 0 6px;font-weight:700;">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 style="font-size:17px;margin:20px 0 8px;font-weight:700;">$1</h2>')
@@ -22,19 +37,16 @@ function renderMarkdown(text: string): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Inline code
-    .replace(/`([^`]+)`/g, '<code style="background:var(--bg-surface,#f9fafb);padding:2px 5px;border-radius:4px;font-size:12px;">$1</code>')
+    .replace(/`([^`]+)`/g, '<code style="background:var(--surface-bg);padding:2px 5px;border-radius:4px;font-size:12px;">$1</code>')
     // Unordered lists
     .replace(/^[-*] (.+)$/gm, '<li style="margin:3px 0;">$1</li>')
     .replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul style="padding-left:20px;margin:8px 0;">$&</ul>')
-    // Links
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:var(--color-primary,#6366f1);text-decoration:underline;" target="_blank" rel="noopener">$1</a>')
-    // Paragraphs (double newline)
+    // Links — URL is validated to prevent javascript: injection
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) =>
+      `<a href="${safeUrl(url)}" style="color:var(--color-primary);text-decoration:underline;" target="_blank" rel="noopener noreferrer">${label}</a>`)
+    // Paragraphs
     .replace(/\n\n/g, '</p><p style="margin:0 0 10px;">')
     .replace(/^(.+)$/, '<p style="margin:0 0 10px;">$1</p>');
-}
-
-function escHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ── Doc list item ──────────────────────────────────────────────────────────────

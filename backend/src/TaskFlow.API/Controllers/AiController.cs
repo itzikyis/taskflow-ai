@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.AI;
 using TaskFlow.Application.AI.Dtos;
@@ -22,6 +24,7 @@ namespace TaskFlow.API.Controllers;
 
 /// <summary>AI-assisted features for the TaskFlow application.</summary>
 [ApiController]
+[Authorize]
 [Route("api/ai")]
 public sealed class AiController(IMediator mediator) : ControllerBase
 {
@@ -270,9 +273,10 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         [FromBody] NaturalLanguageSearchRequest request,
         CancellationToken ct)
     {
-        // UserId is hard-coded to empty guid as a placeholder; a real implementation would
-        // resolve it from the authenticated principal (e.g. HttpContext.User claims).
-        var userId = Guid.Empty;
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
         var result = await mediator.Send(
             new NaturalLanguageSearchQuery(request.Query, userId, request.ProjectId), ct);
         return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);

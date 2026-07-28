@@ -53,6 +53,18 @@ public sealed class TaskItem : AggregateRoot
     /// <summary>Gets the parent task this task is a subtask of, or null if it is top-level.</summary>
     public Guid? ParentTaskId { get; private set; }
 
+    /// <summary>Gets a value indicating whether this task recurs on a schedule.</summary>
+    public bool IsRecurring { get; private set; }
+
+    /// <summary>Gets the recurrence pattern ("daily", "weekly", or "monthly"), or null if not recurring.</summary>
+    public string? RecurrencePattern { get; private set; }
+
+    /// <summary>Gets the optional date at which recurrence stops.</summary>
+    public DateTime? RecurrenceEndDate { get; private set; }
+
+    /// <summary>Gets the template this task was created from, or null if created ad-hoc.</summary>
+    public Guid? TemplateId { get; private set; }
+
     /// <summary>Gets the ID of the user who created this task.</summary>
     public Guid CreatedByUserId { get; private init; }
 
@@ -131,6 +143,29 @@ public sealed class TaskItem : AggregateRoot
     public void MoveToColumn(Guid? columnId)
     {
         ColumnId = columnId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Sets or clears the recurrence settings for this task.</summary>
+    /// <param name="pattern">One of "daily", "weekly", or "monthly".</param>
+    /// <param name="endDate">Optional UTC date after which recurrence stops.</param>
+    public Result SetRecurrence(string pattern, DateTime? endDate)
+    {
+        var valid = new[] { "daily", "weekly", "monthly" };
+        if (!valid.Contains(pattern))
+            return Result.Failure(TaskErrors.InvalidRecurrencePattern);
+
+        IsRecurring = true;
+        RecurrencePattern = pattern;
+        RecurrenceEndDate = endDate;
+        UpdatedAt = DateTime.UtcNow;
+        return Result.Ok;
+    }
+
+    /// <summary>Links this task to the template it was instantiated from.</summary>
+    public void SetTemplateId(Guid templateId)
+    {
+        TemplateId = templateId;
         UpdatedAt = DateTime.UtcNow;
     }
 

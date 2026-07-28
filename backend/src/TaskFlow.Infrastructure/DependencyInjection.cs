@@ -53,6 +53,8 @@ public static class DependencyInjection
         services.AddSingleton<IDuplicateTaskDetectionService, TextSimilarityDuplicateDetectionService>();
         services.AddScoped<ICalendarSubscriptionRepository, CalendarSubscriptionRepository>();
         services.AddHttpClient<ICalendarImportService, ICalFeedImportService>();
+        services.AddScoped<ITaskTemplateRepository, TaskTemplateRepository>();
+        services.AddScoped<IGoalRepository, GoalRepository>();
         services.AddHttpClient<IAiAssistantService, ClaudeAiAssistantService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtService, JwtService>();

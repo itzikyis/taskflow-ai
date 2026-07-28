@@ -17,6 +17,9 @@ public static class TaskErrors
     public static readonly Error NotFound =
         new("Task.NotFound", "The requested task was not found.");
 
+    public static readonly Error InvalidRecurrencePattern =
+        new("Task.InvalidRecurrencePattern", "Recurrence pattern must be 'daily', 'weekly', or 'monthly'.");
+
     public static Error InvalidStatusTransition(TaskItemStatus from, TaskItemStatus to) =>
         new("Task.InvalidTransition", $"Cannot transition task from '{from}' to '{to}'.");
 }

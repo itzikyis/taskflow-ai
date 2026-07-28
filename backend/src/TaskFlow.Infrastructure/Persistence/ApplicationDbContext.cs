@@ -28,6 +28,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<CustomField> CustomFields => Set<CustomField>();
     public DbSet<CustomFieldValue> CustomFieldValues => Set<CustomFieldValue>();
     public DbSet<CalendarSubscription> CalendarSubscriptions => Set<CalendarSubscription>();
+    public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
+    public DbSet<Goal> Goals => Set<Goal>();
+    public DbSet<KeyResult> KeyResults => Set<KeyResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

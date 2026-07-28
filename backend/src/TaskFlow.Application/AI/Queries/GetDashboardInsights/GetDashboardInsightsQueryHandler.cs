@@ -17,7 +17,7 @@ public sealed class GetDashboardInsightsQueryHandler(
     /// <inheritdoc/>
     public async Task<Result<DashboardInsightsDto>> Handle(GetDashboardInsightsQuery request, CancellationToken ct)
     {
-        var tasks = await taskRepository.GetAllAsync(cancellationToken: ct);
+        var tasks = await taskRepository.GetByProjectIdAsync(request.ProjectId, ct);
 
         var now = DateTime.UtcNow;
         var total = tasks.Count;

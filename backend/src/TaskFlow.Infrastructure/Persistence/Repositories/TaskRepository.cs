@@ -22,6 +22,22 @@ internal sealed class TaskRepository(ApplicationDbContext context) : ITaskReposi
         return await query.OrderByDescending(t => t.CreatedAt).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TaskItem>> GetByProjectIdAsync(
+        Guid projectId,
+        CancellationToken cancellationToken = default)
+    {
+        // Tasks are linked to projects through: task.column_id → board_columns.id → boards.project_id.
+        // Tasks with a null column_id are not associated with any board/project and are excluded.
+        return await context.Tasks
+            .AsNoTracking()
+            .Where(t => t.ColumnId != null &&
+                        context.Set<Board>()
+                               .Any(b => b.ProjectId == projectId &&
+                                         b.Columns.Any(c => c.Id == t.ColumnId)))
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(TaskItem task, CancellationToken cancellationToken = default) =>
         await context.Tasks.AddAsync(task, cancellationToken);
 

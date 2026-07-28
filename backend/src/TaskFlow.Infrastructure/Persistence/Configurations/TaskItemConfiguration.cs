@@ -60,6 +60,21 @@ internal sealed class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.Property(t => t.UpdatedAt)
             .HasColumnName("updated_at");
 
+        builder.Property(t => t.IsRecurring)
+            .HasColumnName("is_recurring")
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        builder.Property(t => t.RecurrencePattern)
+            .HasColumnName("recurrence_pattern")
+            .HasMaxLength(20);
+
+        builder.Property(t => t.RecurrenceEndDate)
+            .HasColumnName("recurrence_end_date");
+
+        builder.Property(t => t.TemplateId)
+            .HasColumnName("template_id");
+
         builder.Ignore(t => t.DomainEvents);
     }
 }

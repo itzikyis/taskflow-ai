@@ -6,6 +6,7 @@ using TaskFlow.Application.AI.Commands.AssignAiAgent;
 using TaskFlow.Application.DuplicateDetection.Queries.FindDuplicateTasks;
 using TaskFlow.Application.Search.Queries.SearchTasks;
 using TaskFlow.Application.Tasks.Commands.CreateSubtasks;
+using TaskFlow.Application.Tasks.Commands.SetTaskRecurrence;
 using TaskFlow.Application.Tasks.Commands.CreateTask;
 using TaskFlow.Application.Tasks.Commands.DeleteTask;
 using TaskFlow.Application.Tasks.Commands.UpdateTask;
@@ -242,6 +243,31 @@ public sealed class TasksController(IMediator mediator) : ControllerBase
         return Created(string.Empty, result.Value);
     }
 
+    /// <summary>Sets the recurrence pattern on a task.</summary>
+    [HttpPatch("{id:guid}/recurrence")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetRecurrence(
+        Guid id,
+        [FromBody] SetRecurrenceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(
+            new SetTaskRecurrenceCommand(id, request.Pattern, request.EndDate),
+            cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error.Code == TaskErrors.NotFound.Code) return NotFound(result.Error);
+            return BadRequest(result.Error);
+        }
+
+        return NoContent();
+    }
+
     /// <summary>Finds likely duplicates of a task by title/description similarity.</summary>
     [HttpPost("check-duplicates")]
     [Authorize]
@@ -293,3 +319,6 @@ public sealed record SearchTasksRequest(string Query);
 
 /// <summary>Payload for checking a candidate task against existing tasks for duplicates.</summary>
 public sealed record CheckDuplicatesRequest(string Title, string? Description, Guid? ExcludeTaskId);
+
+/// <summary>Payload for setting a task's recurrence pattern.</summary>
+public sealed record SetRecurrenceRequest(string Pattern, DateTime? EndDate);

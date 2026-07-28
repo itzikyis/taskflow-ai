@@ -19,7 +19,7 @@ public sealed class GetStatusDigestQueryHandler(
     /// <inheritdoc/>
     public async Task<Result<StatusDigestDto>> Handle(GetStatusDigestQuery request, CancellationToken ct)
     {
-        var tasks = await taskRepository.GetAllAsync(cancellationToken: ct);
+        var tasks = await taskRepository.GetByProjectIdAsync(request.ProjectId, ct);
 
         var cutoff = DateTime.UtcNow.AddDays(-request.PeriodDays);
         var now = DateTime.UtcNow;

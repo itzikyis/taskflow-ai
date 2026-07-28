@@ -11,6 +11,12 @@ public interface ITaskRepository
     /// <summary>Gets all tasks, optionally filtered by assigned user.</summary>
     Task<IReadOnlyList<TaskItem>> GetAllAsync(Guid? assignedToUserId = null, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gets all tasks that belong to the specified project, resolved via the board-column relationship
+    /// (task → board_column → board → project).
+    /// </summary>
+    Task<IReadOnlyList<TaskItem>> GetByProjectIdAsync(Guid projectId, CancellationToken cancellationToken = default);
+
     /// <summary>Adds a new task to the store.</summary>
     Task AddAsync(TaskItem task, CancellationToken cancellationToken = default);
 

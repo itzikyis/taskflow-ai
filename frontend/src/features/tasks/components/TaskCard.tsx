@@ -7,6 +7,7 @@ import { AttachmentList } from '@/features/attachments/components/AttachmentList
 import { AiDescriptionSuggestion } from '@/features/ai/components/AiDescriptionSuggestion';
 import { StoryPointEstimator } from './StoryPointEstimator';
 import { DevelopmentPanel } from '@/features/development/components/DevelopmentPanel';
+import { DevelopmentLinks } from './DevelopmentLinks';
 import { TimePanel } from './TimePanel';
 import { DependencyPanel } from './DependencyPanel';
 import { TaskBreakdownModal } from './TaskBreakdownModal';
@@ -19,7 +20,7 @@ interface TaskCardProps {
   isBlocked?: boolean;
 }
 
-type Panel = 'comments' | 'attachments' | 'development' | 'time' | 'dependencies' | 'ai' | null;
+type Panel = 'comments' | 'attachments' | 'development' | 'github' | 'time' | 'dependencies' | 'ai' | null;
 
 const PRIORITY_COLOR: Record<TaskPriority, { color: string; bg: string; dot: string }> = {
   Low:      { color: 'var(--priority-low)',      bg: 'var(--priority-low-bg)',      dot: '#10b981' },
@@ -287,6 +288,19 @@ export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
           </button>
           <button
             type="button"
+            onClick={() => toggle('github')}
+            className="tf-btn tf-btn-ghost tf-btn-sm"
+            title="GitHub PRs & commits"
+            style={{
+              color: panel === 'github' ? 'var(--color-primary)' : 'var(--text-secondary)',
+              borderColor: panel === 'github' ? 'var(--color-primary)' : 'var(--surface-border)',
+              background: panel === 'github' ? 'var(--color-primary-light)' : 'none',
+            }}
+          >
+            GH
+          </button>
+          <button
+            type="button"
             onClick={() => toggle('dependencies')}
             className="tf-btn tf-btn-ghost tf-btn-sm"
             title="Dependencies"
@@ -342,6 +356,9 @@ export function TaskCard({ task, onDelete, isBlocked = false }: TaskCardProps) {
           )}
           {panel === 'development' && (
             <DevelopmentPanel taskId={task.id} />
+          )}
+          {panel === 'github' && (
+            <DevelopmentLinks taskId={task.id} />
           )}
           {panel === 'time' && (
             <TimePanel taskId={task.id} />

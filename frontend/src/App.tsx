@@ -16,6 +16,7 @@ import { RetrospectivePage } from '@/features/ai/components/RetrospectivePage';
 import { RiskDetectionPage } from '@/features/ai/components/RiskDetectionPage';
 import { MeetingNotesPage } from '@/features/ai/components/MeetingNotesPage';
 import { CopilotPage } from '@/features/ai/components/CopilotPage';
+import { AskTaskFlowPage } from '@/features/ai/components/AskTaskFlowPage';
 import { TimelinePage } from '@/features/timeline/components/TimelinePage';
 import { DashboardPage } from '@/features/reporting/components/DashboardPage';
 import { IntegrationsPage } from '@/features/integrations/components/IntegrationsPage';
@@ -27,7 +28,7 @@ import { WorkloadPage } from '@/features/reporting/components/WorkloadPage';
 import { AnalyticsPage } from '@/features/reporting/components/AnalyticsPage';
 import { StatusDigestPage } from '@/features/reporting/components/StatusDigestPage';
 
-type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics';
+type View = 'tasks' | 'timeline' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'ask-taskflow' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -45,6 +46,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'risk-detection', icon: '🛡️', label: 'AI Risk Scan' },
   { id: 'meeting-notes', icon: '🗒️', label: 'Meeting Notes' },
   { id: 'copilot',      icon: '🤖', label: 'AI Copilot'  },
+  { id: 'ask-taskflow', icon: '🔍', label: 'Ask TaskFlow' },
   { id: 'automations',  icon: '⚡', label: 'Automations'  },
   { id: 'initiatives',  icon: '🗺', label: 'Initiatives'  },
   { id: 'project-docs', icon: '📄', label: 'Project Docs' },
@@ -146,7 +148,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -204,6 +206,7 @@ export default function App() {
           {view === 'risk-detection' && <RiskDetectionPage />}
           {view === 'meeting-notes'  && <MeetingNotesPage />}
           {view === 'copilot'        && <CopilotPage />}
+          {view === 'ask-taskflow'   && <AskTaskFlowPage />}
           {view === 'automations'    && <AutomationsPage />}
           {view === 'initiatives'    && <InitiativesPage />}
           {view === 'project-docs'   && <ProjectDocsPage />}

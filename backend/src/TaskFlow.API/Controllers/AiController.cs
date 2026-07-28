@@ -14,6 +14,7 @@ using TaskFlow.Application.AI.Queries.SuggestTaskBreakdown;
 using TaskFlow.Application.AI.Queries.SuggestTaskDescription;
 using TaskFlow.Application.AI.Queries.GetDashboardInsights;
 using TaskFlow.Application.AI.Queries.GetStatusDigest;
+using TaskFlow.Application.AI.Queries.NaturalLanguageSearch;
 using TaskFlow.Application.AI.Queries.SummarizeComments;
 using TaskFlow.Application.AI.Queries.TriageTask;
 
@@ -244,6 +245,22 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
+    /// <summary>Performs a natural-language task search and returns matching tasks with an interpretation.</summary>
+    [HttpPost("search")]
+    [ProducesResponseType(typeof(NaturalLanguageSearchResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> NaturalLanguageSearch(
+        [FromBody] NaturalLanguageSearchRequest request,
+        CancellationToken ct)
+    {
+        // UserId is hard-coded to empty guid as a placeholder; a real implementation would
+        // resolve it from the authenticated principal (e.g. HttpContext.User claims).
+        var userId = Guid.Empty;
+        var result = await mediator.Send(
+            new NaturalLanguageSearchQuery(request.Query, userId, request.ProjectId), ct);
+        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
+    }
+
     /// <summary>Returns an AI-narrated insight summary for the given project's dashboard.</summary>
     [HttpGet("dashboard-insights/{projectId:guid}")]
     [ProducesResponseType(typeof(DashboardInsightsDto), StatusCodes.Status200OK)]
@@ -307,6 +324,11 @@ public sealed record RiskTaskRequest(
 
 /// <summary>Payload for the meeting-notes analysis endpoint.</summary>
 public sealed record MeetingNotesRequest(string Transcript, IReadOnlyList<string>? Participants);
+
+/// <summary>Payload for the natural-language search endpoint.</summary>
+/// <param name="Query">The free-text search query.</param>
+/// <param name="ProjectId">Optional project scope to restrict the search.</param>
+public sealed record NaturalLanguageSearchRequest(string Query, Guid? ProjectId);
 
 /// <summary>Payload for the copilot endpoint.</summary>
 public sealed record CopilotRequest(

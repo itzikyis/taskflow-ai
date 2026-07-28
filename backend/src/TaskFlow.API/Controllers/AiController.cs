@@ -194,6 +194,23 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 
+    /// <summary>
+    /// Triages a task by content (title + description) before it is saved.
+    /// Returns a suggested priority and a list of potential duplicates found in the project.
+    /// </summary>
+    [HttpPost("triage")]
+    [ProducesResponseType(typeof(TaskTriageResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> TriageByContent(
+        [FromBody] TriageByContentRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(
+            new TriageByContentQuery(request.Title, request.Description, request.ProjectId), ct);
+        return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
+    }
+
     /// <summary>Triages a newly created task: suggests assignee, priority, and flags potential duplicates.</summary>
     [HttpGet("triage/{taskId:guid}")]
     [ProducesResponseType(typeof(TriageTaskDto), StatusCodes.Status200OK)]
@@ -272,6 +289,12 @@ public sealed class AiController(IMediator mediator) : ControllerBase
         return result.IsFailure ? MapFailure(result.Error) : Ok(result.Value);
     }
 }
+
+/// <summary>Payload for the POST /api/ai/triage endpoint.</summary>
+/// <param name="Title">Title of the candidate task.</param>
+/// <param name="Description">Optional description of the candidate task.</param>
+/// <param name="ProjectId">Project to scope duplicate detection against.</param>
+public sealed record TriageByContentRequest(string Title, string? Description, Guid ProjectId);
 
 /// <summary>Payload for suggest-description endpoint.</summary>
 public sealed record SuggestDescriptionRequest(string TaskTitle);

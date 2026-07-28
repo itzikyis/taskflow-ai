@@ -152,7 +152,11 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+<<<<<<< HEAD
             {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : view === 'task-templates' ? 'Task Templates' : 'Retrospective'}
+=======
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : 'Retrospective'}
+>>>>>>> origin/master
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -219,7 +223,10 @@ export default function App() {
           {view === 'status-digest'  && <StatusDigestPage />}
           {view === 'analytics'      && <AnalyticsPage />}
           {view === 'goals'          && <GoalsPage />}
+<<<<<<< HEAD
           {view === 'task-templates' && <TaskTemplatesPage />}
+=======
+>>>>>>> origin/master
         </main>
       </div>
     </div>

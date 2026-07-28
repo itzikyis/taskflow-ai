@@ -510,6 +510,41 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
     private sealed record CopilotAnswerResponse(string? Answer, List<string>? ReferencedTaskIds);
 
     /// <inheritdoc/>
+    /// <inheritdoc/>
+    public async Task<(string SuggestedPriority, string Reasoning)> SuggestPriorityAsync(
+        string title,
+        string? description,
+        CancellationToken ct)
+    {
+        var context = string.IsNullOrWhiteSpace(description)
+            ? $"Title: {title}"
+            : $"Title: {title}\nDescription: {description}";
+
+        var prompt =
+            "You are a project management assistant. Given the following task, suggest a priority level.\n\n" +
+            $"TASK:\n{context}\n\n" +
+            "Reply in EXACTLY this JSON format (no markdown, raw JSON only):\n" +
+            "{\n" +
+            "  \"suggestedPriority\": \"Low|Medium|High|Urgent\",\n" +
+            "  \"reasoning\": \"1-2 sentence explanation\"\n" +
+            "}";
+
+        var raw = await CallClaudeAsync(prompt, ct, maxTokens: 256);
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = JsonSerializer.Deserialize<PriorityResponse>(raw, options);
+            if (response is not null && !string.IsNullOrWhiteSpace(response.SuggestedPriority))
+                return (response.SuggestedPriority, response.Reasoning ?? string.Empty);
+        }
+        catch { /* fall through to default */ }
+
+        return ("Medium", "AI priority suggestion is temporarily unavailable.");
+    }
+
+    private sealed record PriorityResponse(string? SuggestedPriority, string? Reasoning);
+
     public async Task<TriageTaskDto> TriageTaskAsync(
         string taskTitle,
         string? taskDescription,

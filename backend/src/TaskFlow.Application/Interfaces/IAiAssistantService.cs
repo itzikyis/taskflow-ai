@@ -64,6 +64,19 @@ public interface IAiAssistantService
         CancellationToken ct = default);
 
     /// <summary>
+    /// Suggests a priority level (Low, Medium, High, or Urgent) for a task based on its title and description.
+    /// Returns the suggested priority and reasoning. Duplicate detection is handled separately by
+    /// <see cref="IDuplicateTaskDetectionService"/>.
+    /// </summary>
+    /// <param name="title">Title of the task.</param>
+    /// <param name="description">Optional description of the task.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<(string SuggestedPriority, string Reasoning)> SuggestPriorityAsync(
+        string title,
+        string? description,
+        CancellationToken ct = default);
+
+    /// <summary>
     /// Triages a newly created task by suggesting the best assignee from the team,
     /// a priority level, and flagging potential duplicates among recent project tasks.
     /// </summary>

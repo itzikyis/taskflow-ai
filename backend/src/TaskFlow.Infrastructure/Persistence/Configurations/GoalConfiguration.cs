@@ -51,12 +51,12 @@ internal sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
 
         builder.Ignore(g => g.DomainEvents);
 
-        builder.HasMany<KeyResult>("_keyResults")
+        builder.HasMany(g => g.KeyResults)
             .WithOne()
             .HasForeignKey(kr => kr.GoalId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation("_keyResults").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(g => g.KeyResults).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 

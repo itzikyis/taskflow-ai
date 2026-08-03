@@ -98,8 +98,6 @@ function TaskTableRow({ task, onDelete, selection }: { task: Task; onDelete: (id
     setEditing(false);
   };
 
-  const isSelected = selection.selectedIds.has(task.id);
-
   return (
     <tr
       style={{

@@ -6,6 +6,7 @@ using TaskFlow.Application.TimeTracking.Commands.DeleteTimeEntry;
 using TaskFlow.Application.TimeTracking.Commands.LogTime;
 using TaskFlow.Application.TimeTracking.Dtos;
 using TaskFlow.Application.TimeTracking.Queries.GetTaskTimeSummary;
+using TaskFlow.Application.TimeTracking.Queries.GetTimeReport;
 using TaskFlow.Application.TimeTracking.Queries.GetTimesheet;
 using TaskFlow.Domain.Common;
 
@@ -34,6 +35,22 @@ public sealed class TimeEntriesController(IMediator mediator) : ControllerBase
         CancellationToken ct)
     {
         var result = await mediator.Send(new GetTimesheetQuery(userId, weekStart), ct);
+        return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
+    }
+
+    /// <summary>Returns an estimate-vs-actual time report for all tasks in a project.</summary>
+    [HttpGet("time-entries/report")]
+    [Authorize]
+    [ProducesResponseType(typeof(TimeReportDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetTimeReport(
+        [FromQuery] Guid projectId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetTimeReportQuery(projectId, from, to), ct);
         return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
 

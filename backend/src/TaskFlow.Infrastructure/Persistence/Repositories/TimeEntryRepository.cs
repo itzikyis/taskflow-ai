@@ -26,6 +26,19 @@ internal sealed class TimeEntryRepository(ApplicationDbContext context) : ITimeE
             .OrderBy(e => e.LoggedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<TimeEntry>> GetByTaskIdsAsync(
+        IEnumerable<Guid> taskIds,
+        DateTime? from = null,
+        DateTime? to = null,
+        CancellationToken ct = default)
+    {
+        var ids = taskIds.ToList();
+        var query = context.TimeEntries.Where(e => ids.Contains(e.TaskId));
+        if (from.HasValue) query = query.Where(e => e.LoggedAt >= from.Value);
+        if (to.HasValue)   query = query.Where(e => e.LoggedAt <= to.Value);
+        return await query.OrderBy(e => e.TaskId).ThenBy(e => e.LoggedAt).ToListAsync(ct);
+    }
+
     public async Task AddAsync(TimeEntry entry, CancellationToken ct = default) =>
         await context.TimeEntries.AddAsync(entry, ct);
 

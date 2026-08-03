@@ -18,6 +18,13 @@ public interface ITimeEntryRepository
     /// <summary>Returns the total minutes logged against a task.</summary>
     Task<int> GetTotalMinutesByTaskAsync(Guid taskId, CancellationToken ct = default);
 
+    /// <summary>Returns all time entries for the given tasks, optionally filtered by date range (UTC, inclusive).</summary>
+    Task<IReadOnlyList<TimeEntry>> GetByTaskIdsAsync(
+        IEnumerable<Guid> taskIds,
+        DateTime? from = null,
+        DateTime? to = null,
+        CancellationToken ct = default);
+
     /// <summary>Adds a new time entry to the context.</summary>
     Task AddAsync(TimeEntry entry, CancellationToken ct = default);
 

@@ -40,3 +40,7 @@ export interface UpdateStatusPayload {
 export interface MoveToColumnPayload {
   columnId: string | null;
 }
+
+export interface UpdatePriorityPayload {
+  priority: TaskPriority;
+}

@@ -55,6 +55,36 @@ export const timesheetService = {
   },
 };
 
+// ── Time Report ───────────────────────────────────────────────────────────────
+
+export interface TaskTimeEntryDto {
+  taskId: string;
+  taskTitle: string;
+  estimatedMinutes: number;
+  loggedMinutes: number;
+  varianceMinutes: number;
+}
+
+export interface TimeReportDto {
+  totalEstimatedMinutes: number;
+  totalLoggedMinutes: number;
+  varianceMinutes: number;
+  taskBreakdown: TaskTimeEntryDto[];
+}
+
+export const timeReportService = {
+  getTimeReport: async (
+    projectId: string,
+    from?: string,
+    to?: string,
+  ): Promise<TimeReportDto> => {
+    const { data } = await axios.get<TimeReportDto>('/api/time-entries/report', {
+      params: { projectId, from, to },
+    });
+    return data;
+  },
+};
+
 /** Formats minutes as "2h 30m" / "45m". */
 export function formatMinutes(total: number): string {
   const h = Math.floor(total / 60);

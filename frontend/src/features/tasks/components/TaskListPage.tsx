@@ -247,7 +247,7 @@ export function TaskListPage() {
                         checked={selectedIds.has(task.id)}
                         onChange={() => handleToggleSelect(task.id)}
                         style={{
-                          position: 'absolute', top: 10, right: 36, zIndex: 1,
+                          position: 'absolute', top: 10, right: 10, zIndex: 1,
                           cursor: 'pointer', width: 15, height: 15,
                         }}
                       />

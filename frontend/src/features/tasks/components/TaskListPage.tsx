@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTasks, useDeleteTask, useTaskSearch } from '../hooks/useTasks';
 import { useAllDependencies } from '../hooks/useDependencies';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import { TaskTableView, type GroupBy } from './TaskTableView';
+import { BulkActionToolbar } from './BulkActionToolbar';
 import type { Task, TaskStatus } from '../types/task.types';
 import type { TaskSearchResult } from '@/services/taskService';
 
@@ -29,9 +30,35 @@ export function TaskListPage() {
     () => (localStorage.getItem('taskflow-view-mode') as ViewMode) || 'board');
   const [groupBy, setGroupBy] = useState<GroupBy>(
     () => (localStorage.getItem('taskflow-group-by') as GroupBy) || 'none');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const changeViewMode = (m: ViewMode) => { setViewMode(m); localStorage.setItem('taskflow-view-mode', m); };
-  const changeGroupBy = (g: GroupBy) => { setGroupBy(g); localStorage.setItem('taskflow-group-by', g); };
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  }, []);
+
+  const handleToggleAll = useCallback((ids: string[]) => {
+    setSelectedIds(prev => {
+      const allSelected = ids.every(id => prev.has(id));
+      return allSelected ? new Set() : new Set(ids);
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const changeViewMode = (m: ViewMode) => {
+    setViewMode(m);
+    localStorage.setItem('taskflow-view-mode', m);
+    setSelectedIds(new Set());
+  };
+  const changeGroupBy = (g: GroupBy) => {
+    setGroupBy(g);
+    localStorage.setItem('taskflow-group-by', g);
+    setSelectedIds(new Set());
+  };
 
   const runNlSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +138,7 @@ export function TaskListPage() {
               className="tf-input"
               value={nlQuery}
               onChange={e => setNlQuery(e.target.value)}
-              placeholder="✨  Ask… e.g. “overdue high priority tasks assigned to me”"
+              placeholder={'✨  Ask… e.g. “overdue high priority tasks assigned to me”'}
               style={{ flex: 1 }}
             />
             <button type="submit" className="tf-btn tf-btn-primary tf-btn-sm" disabled={search.isPending || !nlQuery.trim()}>
@@ -184,7 +211,16 @@ export function TaskListPage() {
           </button>
         </div>
       ) : viewMode === 'list' ? (
-        <TaskTableView tasks={board} groupBy={groupBy} onDelete={id => deleteMutation.mutate(id)} />
+        <TaskTableView
+          tasks={board}
+          groupBy={groupBy}
+          onDelete={id => deleteMutation.mutate(id)}
+          selection={{
+            selectedIds,
+            onToggleSelect: handleToggleSelect,
+            onToggleAll: handleToggleAll,
+          }}
+        />
       ) : (
         <div className="kanban-board">
           {COLUMNS.map(col => {
@@ -204,12 +240,23 @@ export function TaskListPage() {
                   </div>
                 ) : (
                   items.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      isBlocked={blockedIds.has(task.id)}
-                      onDelete={() => deleteMutation.mutate(task.id)}
-                    />
+                    <div key={task.id} style={{ position: 'relative' }}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select task: ${task.title}`}
+                        checked={selectedIds.has(task.id)}
+                        onChange={() => handleToggleSelect(task.id)}
+                        style={{
+                          position: 'absolute', top: 10, right: 36, zIndex: 1,
+                          cursor: 'pointer', width: 15, height: 15,
+                        }}
+                      />
+                      <TaskCard
+                        task={task}
+                        isBlocked={blockedIds.has(task.id)}
+                        onDelete={() => deleteMutation.mutate(task.id)}
+                      />
+                    </div>
                   ))
                 )}
               </div>
@@ -217,6 +264,9 @@ export function TaskListPage() {
           })}
         </div>
       )}
+
+      {/* ── Bulk action toolbar ─────────────────────────────── */}
+      <BulkActionToolbar selectedIds={selectedIds} onClearSelection={handleClearSelection} />
 
       {/* ── Create modal ────────────────────────────────────── */}
       {showCreate && <CreateTaskForm onClose={() => setShowCreate(false)} />}

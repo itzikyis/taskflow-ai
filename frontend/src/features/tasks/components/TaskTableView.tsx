@@ -4,6 +4,12 @@ import { TASK_STATUSES } from '../types/task.types';
 import { useUpdateTaskStatus, useUpdateTask } from '../hooks/useTasks';
 import { AI_AGENT_ID } from '@/services/taskService';
 
+export type SelectionProps = {
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleAll: (ids: string[]) => void;
+};
+
 export type GroupBy = 'none' | 'status' | 'priority' | 'assignee';
 
 // Valid forward/backward transitions, mirroring the backend rules.
@@ -22,16 +28,28 @@ interface TaskTableViewProps {
   tasks: Task[];
   groupBy: GroupBy;
   onDelete: (id: string) => void;
+  selection: SelectionProps;
 }
 
-export function TaskTableView({ tasks, groupBy, onDelete }: TaskTableViewProps) {
+export function TaskTableView({ tasks, groupBy, onDelete, selection }: TaskTableViewProps) {
   const groups = groupTasks(tasks, groupBy);
+  const allIds = tasks.map(t => t.id);
+  const allSelected = allIds.length > 0 && allIds.every(id => selection.selectedIds.has(id));
 
   return (
     <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--surface-bg)', textAlign: 'left', color: 'var(--text-muted)' }}>
+            <Th w="36px">
+              <input
+                type="checkbox"
+                aria-label="Select all tasks"
+                checked={allSelected}
+                onChange={() => selection.onToggleAll(allIds)}
+                style={{ cursor: 'pointer' }}
+              />
+            </Th>
             <Th w="40%">Title</Th>
             <Th w="130px">Status</Th>
             <Th w="90px">Priority</Th>
@@ -42,7 +60,7 @@ export function TaskTableView({ tasks, groupBy, onDelete }: TaskTableViewProps) 
         </thead>
         <tbody>
           {groups.map(({ key, items }) => (
-            <GroupRows key={key} label={groupBy === 'none' ? null : key} items={items} onDelete={onDelete} />
+            <GroupRows key={key} label={groupBy === 'none' ? null : key} items={items} onDelete={onDelete} selection={selection} />
           ))}
         </tbody>
       </table>
@@ -50,26 +68,27 @@ export function TaskTableView({ tasks, groupBy, onDelete }: TaskTableViewProps) 
   );
 }
 
-function GroupRows({ label, items, onDelete }: { label: string | null; items: Task[]; onDelete: (id: string) => void }) {
+function GroupRows({ label, items, onDelete, selection }: { label: string | null; items: Task[]; onDelete: (id: string) => void; selection: SelectionProps }) {
   return (
     <>
       {label !== null && (
         <tr>
-          <td colSpan={6} style={{ background: 'var(--surface-bg)', padding: '6px 12px', fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>
+          <td colSpan={7} style={{ background: 'var(--surface-bg)', padding: '6px 12px', fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>
             {label} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({items.length})</span>
           </td>
         </tr>
       )}
-      {items.map(t => <TaskTableRow key={t.id} task={t} onDelete={onDelete} />)}
+      {items.map(t => <TaskTableRow key={t.id} task={t} onDelete={onDelete} selection={selection} />)}
     </>
   );
 }
 
-function TaskTableRow({ task, onDelete }: { task: Task; onDelete: (id: string) => void }) {
+function TaskTableRow({ task, onDelete, selection }: { task: Task; onDelete: (id: string) => void; selection: SelectionProps }) {
   const updateStatus = useUpdateTaskStatus(task.id);
   const updateTask = useUpdateTask(task.id);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const isSelected = selection.selectedIds.has(task.id);
 
   const commit = () => {
     const trimmed = draft.trim();
@@ -80,7 +99,21 @@ function TaskTableRow({ task, onDelete }: { task: Task; onDelete: (id: string) =
   };
 
   return (
-    <tr style={{ borderTop: '1px solid var(--border-color)' }}>
+    <tr
+      style={{
+        borderTop: '1px solid var(--border-color)',
+        background: isSelected ? 'var(--color-primary-light, rgba(99,102,241,0.06))' : undefined,
+      }}
+    >
+      <Td>
+        <input
+          type="checkbox"
+          aria-label={`Select task: ${task.title}`}
+          checked={isSelected}
+          onChange={() => selection.onToggleSelect(task.id)}
+          style={{ cursor: 'pointer' }}
+        />
+      </Td>
       <Td>
         {editing ? (
           <input

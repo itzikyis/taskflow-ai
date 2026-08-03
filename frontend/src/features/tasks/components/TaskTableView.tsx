@@ -88,6 +88,7 @@ function TaskTableRow({ task, onDelete, selection }: { task: Task; onDelete: (id
   const updateTask = useUpdateTask(task.id);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const isSelected = selection.selectedIds.has(task.id);
 
   const commit = () => {
     const trimmed = draft.trim();

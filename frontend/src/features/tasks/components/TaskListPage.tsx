@@ -43,8 +43,7 @@ export function TaskListPage() {
   const handleToggleAll = useCallback((ids: string[]) => {
     setSelectedIds(prev => {
       const allSelected = ids.every(id => prev.has(id));
-      if (allSelected) { return new Set(); }
-      return new Set(ids);
+      return allSelected ? new Set() : new Set(ids);
     });
   }, []);
 
@@ -55,7 +54,11 @@ export function TaskListPage() {
     localStorage.setItem('taskflow-view-mode', m);
     setSelectedIds(new Set());
   };
-  const changeGroupBy = (g: GroupBy) => { setGroupBy(g); localStorage.setItem('taskflow-group-by', g); setSelectedIds(new Set()); };
+  const changeGroupBy = (g: GroupBy) => {
+    setGroupBy(g);
+    localStorage.setItem('taskflow-group-by', g);
+    setSelectedIds(new Set());
+  };
 
   const runNlSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +138,7 @@ export function TaskListPage() {
               className="tf-input"
               value={nlQuery}
               onChange={e => setNlQuery(e.target.value)}
-              placeholder="✨  Ask… e.g. “overdue high priority tasks assigned to me”"
+              placeholder={'✨  Ask… e.g. “overdue high priority tasks assigned to me”'}
               style={{ flex: 1 }}
             />
             <button type="submit" className="tf-btn tf-btn-primary tf-btn-sm" disabled={search.isPending || !nlQuery.trim()}>
@@ -244,8 +247,8 @@ export function TaskListPage() {
                         checked={selectedIds.has(task.id)}
                         onChange={() => handleToggleSelect(task.id)}
                         style={{
-                          position: 'absolute', top: 10, right: 10, zIndex: 1, cursor: 'pointer',
-                          width: 15, height: 15,
+                          position: 'absolute', top: 10, right: 10, zIndex: 1,
+                          cursor: 'pointer', width: 15, height: 15,
                         }}
                       />
                       <TaskCard

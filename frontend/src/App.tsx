@@ -30,8 +30,9 @@ import { StatusDigestPage } from '@/features/reporting/components/StatusDigestPa
 import { GoalsPage } from '@/features/goals/components/GoalsPage';
 import { TaskTemplatesPage } from '@/features/tasks/components/TaskTemplatesPage';
 import { CalendarPage } from '@/features/calendar/components/CalendarPage';
+import { GuestPortalPage } from '@/features/guest-portal/components/GuestPortalPage';
 
-type View = 'tasks' | 'timeline' | 'calendar' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'ask-taskflow' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics' | 'goals' | 'task-templates';
+type View = 'tasks' | 'timeline' | 'calendar' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'ask-taskflow' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics' | 'goals' | 'task-templates' | 'guest-portal';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -60,6 +61,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'analytics', icon: '📈', label: 'Analytics' },
   { id: 'goals', icon: '🎯', label: 'Goals & OKRs' },
   { id: 'task-templates', icon: '📋', label: 'Task Templates' },
+  { id: 'guest-portal',   icon: '🔗', label: 'Guest Portal'   },
 ];
 
 export default function App() {
@@ -154,7 +156,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'calendar' ? 'Calendar' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : view === 'task-templates' ? 'Task Templates' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'calendar' ? 'Calendar' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : view === 'task-templates' ? 'Task Templates' : view === 'guest-portal' ? 'Guest Portal' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -223,6 +225,7 @@ export default function App() {
           {view === 'analytics'      && <AnalyticsPage />}
           {view === 'goals'          && <GoalsPage />}
           {view === 'task-templates' && <TaskTemplatesPage />}
+          {view === 'guest-portal'   && <GuestPortalPage />}
         </main>
       </div>
     </div>

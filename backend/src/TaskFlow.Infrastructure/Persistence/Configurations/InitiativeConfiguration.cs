@@ -23,14 +23,27 @@ internal sealed class InitiativeConfiguration : IEntityTypeConfiguration<Initiat
         builder.Property(i => i.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(i => i.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
-        // Store project IDs as a pipe-delimited string.
-        builder.Property(i => i.ProjectIdsRaw)
-            .HasColumnName("project_ids")
-            .HasMaxLength(4000)
-            .IsRequired()
-            .HasDefaultValue(string.Empty);
+        // Many-to-many project links stored in the junction table.
+        builder.HasMany<InitiativeProject>("_projectLinks")
+            .WithOne()
+            .HasForeignKey(l => l.InitiativeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation("_projectLinks").UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Ignore(i => i.ProjectIds);
         builder.Ignore(i => i.DomainEvents);
+    }
+}
+
+/// <summary>EF Core configuration for <see cref="InitiativeProject"/>.</summary>
+internal sealed class InitiativeProjectConfiguration : IEntityTypeConfiguration<InitiativeProject>
+{
+    public void Configure(EntityTypeBuilder<InitiativeProject> builder)
+    {
+        builder.ToTable("initiative_projects");
+        builder.HasKey(l => new { l.InitiativeId, l.ProjectId });
+        builder.Property(l => l.InitiativeId).HasColumnName("initiative_id");
+        builder.Property(l => l.ProjectId).HasColumnName("project_id");
     }
 }

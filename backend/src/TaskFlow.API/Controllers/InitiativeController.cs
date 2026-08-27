@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Initiatives.Commands.AddProjectToInitiative;
 using TaskFlow.Application.Initiatives.Commands.CreateInitiative;
 using TaskFlow.Application.Initiatives.Commands.DeleteInitiative;
+using TaskFlow.Application.Initiatives.Commands.RemoveProjectFromInitiative;
 using TaskFlow.Application.Initiatives.Commands.UpdateInitiativeStatus;
 using TaskFlow.Application.Initiatives.Dtos;
 using TaskFlow.Application.Initiatives.Queries.GetInitiativeRoadmap;
@@ -66,6 +67,17 @@ public sealed class InitiativeController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> AddProject(Guid id, Guid projectId, CancellationToken ct)
     {
         var result = await mediator.Send(new AddProjectToInitiativeCommand(id, projectId), ct);
+        return result.IsFailure ? BadRequest(result.Error) : NoContent();
+    }
+
+    /// <summary>Removes the link between a project and an initiative.</summary>
+    [HttpDelete("{id:guid}/projects/{projectId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveProject(Guid id, Guid projectId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new RemoveProjectFromInitiativeCommand(id, projectId), ct);
         return result.IsFailure ? BadRequest(result.Error) : NoContent();
     }
 

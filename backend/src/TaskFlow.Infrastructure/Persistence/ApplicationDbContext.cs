@@ -24,6 +24,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SlackIntegration> SlackIntegrations => Set<SlackIntegration>();
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<Initiative> Initiatives => Set<Initiative>();
+    public DbSet<InitiativeProject> InitiativeProjects => Set<InitiativeProject>();
     public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
     public DbSet<CustomField> CustomFields => Set<CustomField>();
     public DbSet<CustomFieldValue> CustomFieldValues => Set<CustomFieldValue>();

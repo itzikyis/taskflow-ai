@@ -22,22 +22,13 @@ public enum InitiativePriority
 
 /// <summary>
 /// Cross-project initiative grouping related projects toward a shared goal (e.g. a quarterly OKR).
-/// Stores project references by ID only to preserve aggregate boundaries.
+/// Project references are stored via <see cref="InitiativeProject"/> join entities to preserve aggregate boundaries.
 /// </summary>
 public sealed class Initiative : AggregateRoot
 {
-    private List<Guid> _projectIds = [];
+    private readonly List<InitiativeProject> _projectLinks = [];
 
     private Initiative() { } // EF Core
-
-    // EF Core backing property for persisting project IDs as a pipe-delimited string.
-    public string ProjectIdsRaw
-    {
-        get => string.Join('|', _projectIds);
-        set => _projectIds = string.IsNullOrEmpty(value)
-            ? []
-            : [.. value.Split('|', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse)];
-    }
 
     /// <summary>Short name of the initiative.</summary>
     public string Name { get; private set; } = string.Empty;
@@ -63,11 +54,15 @@ public sealed class Initiative : AggregateRoot
     /// <summary>User who created this initiative.</summary>
     public Guid CreatedByUserId { get; private set; }
 
+    /// <summary>When the initiative was created.</summary>
     public DateTime CreatedAt { get; private set; }
+
+    /// <summary>When the initiative was last modified.</summary>
     public DateTime UpdatedAt { get; private set; }
 
     /// <summary>IDs of projects linked to this initiative.</summary>
-    public IReadOnlyList<Guid> ProjectIds => _projectIds.AsReadOnly();
+    public IReadOnlyList<Guid> ProjectIds =>
+        _projectLinks.Select(l => l.ProjectId).ToList().AsReadOnly();
 
     /// <summary>Creates a new initiative.</summary>
     public static Initiative Create(
@@ -118,18 +113,20 @@ public sealed class Initiative : AggregateRoot
     /// <summary>Links a project to this initiative.</summary>
     public Result AddProject(Guid projectId)
     {
-        if (_projectIds.Contains(projectId))
+        if (_projectLinks.Any(l => l.ProjectId == projectId))
             return Result.Failure(new Error("Initiative.DuplicateProject", "Project is already linked to this initiative."));
-        _projectIds.Add(projectId);
+        _projectLinks.Add(new InitiativeProject(Id, projectId));
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok;
     }
 
-    /// <summary>Removes a project from this initiative.</summary>
+    /// <summary>Removes a project link from this initiative.</summary>
     public Result RemoveProject(Guid projectId)
     {
-        if (!_projectIds.Remove(projectId))
+        var link = _projectLinks.FirstOrDefault(l => l.ProjectId == projectId);
+        if (link is null)
             return Result.Failure(new Error("Initiative.ProjectNotFound", "Project is not linked to this initiative."));
+        _projectLinks.Remove(link);
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok;
     }

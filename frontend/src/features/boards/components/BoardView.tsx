@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBoard, useAddColumn, useRemoveColumn, useDeleteBoard } from '../hooks/useBoards';
 import { useTasks, useMoveTaskToColumn } from '@/features/tasks/hooks/useTasks';
 import type { Task } from '@/features/tasks/types/task.types';
 import type { BoardColumn } from '../types/board.types';
+
+const DEFAULT_COLUMNS = ['To Do', 'In Progress', 'Done'];
 
 interface BoardViewProps {
   boardId: string;
@@ -206,6 +208,16 @@ export function BoardView({ boardId, onClose }: BoardViewProps) {
   const removeCol = useRemoveColumn(boardId);
   const deleteBoard = useDeleteBoard();
 
+  // Seed default columns when a board has none
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (!board || board.columns.length > 0 || seededRef.current || addCol.isPending) return;
+    seededRef.current = true;
+    DEFAULT_COLUMNS.forEach((name, i) => {
+      addCol.mutate({ name, order: i });
+    });
+  }, [board, addCol]);
+
   if (isLoading || !board) return (
     <div className="empty-state"><div className="empty-state-icon">⌛</div></div>
   );
@@ -257,7 +269,8 @@ export function BoardView({ boardId, onClose }: BoardViewProps) {
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
-        Drag any task from the left panel into a column, or between columns.
+        Drag any task from the <strong>Unassigned</strong> panel on the left into a column, or drag between columns.
+        {sorted.length === 0 && ' Setting up default columns…'}
       </p>
 
       <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 16, alignItems: 'flex-start' }}>

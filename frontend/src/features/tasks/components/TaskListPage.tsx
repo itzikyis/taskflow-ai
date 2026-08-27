@@ -2,22 +2,15 @@ import { useState, useCallback, useRef } from 'react';
 import { useTasks, useDeleteTask, useTaskSearch } from '../hooks/useTasks';
 import { useAllDependencies } from '../hooks/useDependencies';
 import { useSavedViews } from '../hooks/useSavedViews';
-import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import { TaskTableView, type GroupBy } from './TaskTableView';
 import { BulkActionToolbar } from './BulkActionToolbar';
-import type { Task, TaskStatus } from '../types/task.types';
+import type { Task } from '../types/task.types';
 import type { TaskFilter } from '../types/savedView.types';
 import type { TaskSearchResult } from '@/services/taskService';
 
-type ViewMode = 'board' | 'list';
+type ViewMode = 'list';
 
-const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
-  { status: 'Todo',       label: 'To Do',       color: 'var(--status-todo)'        },
-  { status: 'InProgress', label: 'In Progress',  color: 'var(--status-inprogress)'  },
-  { status: 'InReview',   label: 'In Review',    color: 'var(--status-inreview)'    },
-  { status: 'Done',       label: 'Done',         color: 'var(--status-done)'        },
-];
 
 const PANEL_STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -44,8 +37,7 @@ export function TaskListPage() {
   const [filter, setFilter] = useState('');
   const [nlQuery, setNlQuery] = useState('');
   const [nlResult, setNlResult] = useState<TaskSearchResult | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (localStorage.getItem('taskflow-view-mode') as ViewMode) || 'board');
+  const [viewMode] = useState<ViewMode>('list');
   const [groupBy, setGroupBy] = useState<GroupBy>(
     () => (localStorage.getItem('taskflow-group-by') as GroupBy) || 'none');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -73,11 +65,6 @@ export function TaskListPage() {
 
   const handleClearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
-  const changeViewMode = (m: ViewMode) => {
-    setViewMode(m);
-    localStorage.setItem('taskflow-view-mode', m);
-    setSelectedIds(new Set());
-  };
   const changeGroupBy = (g: GroupBy) => {
     setGroupBy(g);
     localStorage.setItem('taskflow-group-by', g);
@@ -140,9 +127,6 @@ export function TaskListPage() {
       .filter(d => statusById.get(d.blockedByTaskId) !== 'Done')
       .map(d => d.taskId),
   );
-
-  const byStatus = (status: TaskStatus): Task[] =>
-    board.filter(t => t.status === status);
 
   const pinnedViews = savedViews.filter(v => v.isPinned);
 
@@ -362,35 +346,17 @@ export function TaskListPage() {
         )}
       </div>
 
-      {/* ── View toggle ─────────────────────────────────────── */}
+      {/* ── View controls ───────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            type="button"
-            className={`tf-btn tf-btn-sm ${viewMode === 'board' ? 'tf-btn-primary' : 'tf-btn-ghost'}`}
-            onClick={() => changeViewMode('board')}
-          >
-            ▦ Board
-          </button>
-          <button
-            type="button"
-            className={`tf-btn tf-btn-sm ${viewMode === 'list' ? 'tf-btn-primary' : 'tf-btn-ghost'}`}
-            onClick={() => changeViewMode('list')}
-          >
-            ☰ List
-          </button>
-        </div>
-        {viewMode === 'list' && (
-          <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            Group by
-            <select className="tf-input" value={groupBy} onChange={e => changeGroupBy(e.target.value as GroupBy)} style={{ fontSize: 12, padding: '2px 6px' }}>
-              <option value="none">None</option>
-              <option value="status">Status</option>
-              <option value="priority">Priority</option>
-              <option value="assignee">Assignee</option>
-            </select>
-          </label>
-        )}
+        <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          Group by
+          <select className="tf-input" value={groupBy} onChange={e => changeGroupBy(e.target.value as GroupBy)} style={{ fontSize: 12, padding: '2px 6px' }}>
+            <option value="none">None</option>
+            <option value="status">Status</option>
+            <option value="priority">Priority</option>
+            <option value="assignee">Assignee</option>
+          </select>
+        </label>
       </div>
 
       {/* ── Board / List ─────────────────────────────────────── */}
@@ -406,7 +372,7 @@ export function TaskListPage() {
             + New task
           </button>
         </div>
-      ) : viewMode === 'list' ? (
+      ) : (
         <TaskTableView
           tasks={board}
           groupBy={groupBy}
@@ -417,48 +383,6 @@ export function TaskListPage() {
             onToggleAll: handleToggleAll,
           }}
         />
-      ) : (
-        <div className="kanban-board">
-          {COLUMNS.map(col => {
-            const items = byStatus(col.status);
-            return (
-              <div key={col.status} className="kanban-col">
-                <div className="kanban-col-header">
-                  <span className="kanban-col-title" style={{ color: col.color }}>
-                    {col.label}
-                  </span>
-                  <span className="kanban-count">{items.length}</span>
-                </div>
-
-                {items.length === 0 ? (
-                  <div style={{ padding: '20px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                    No tasks
-                  </div>
-                ) : (
-                  items.map(task => (
-                    <div key={task.id} style={{ position: 'relative' }}>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select task: ${task.title}`}
-                        checked={selectedIds.has(task.id)}
-                        onChange={() => handleToggleSelect(task.id)}
-                        style={{
-                          position: 'absolute', top: 10, right: 10, zIndex: 1,
-                          cursor: 'pointer', width: 15, height: 15,
-                        }}
-                      />
-                      <TaskCard
-                        task={task}
-                        isBlocked={blockedIds.has(task.id)}
-                        onDelete={() => deleteMutation.mutate(task.id)}
-                      />
-                    </div>
-                  ))
-                )}
-              </div>
-            );
-          })}
-        </div>
       )}
 
       {/* ── Bulk action toolbar ─────────────────────────────── */}

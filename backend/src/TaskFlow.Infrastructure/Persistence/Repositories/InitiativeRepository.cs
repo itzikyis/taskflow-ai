@@ -9,10 +9,16 @@ namespace TaskFlow.Infrastructure.Persistence.Repositories;
 internal sealed class InitiativeRepository(ApplicationDbContext db) : IInitiativeRepository
 {
     public async Task<IReadOnlyList<Initiative>> GetAllAsync(CancellationToken ct) =>
-        await db.Initiatives.AsNoTracking().OrderByDescending(i => i.CreatedAt).ToListAsync(ct);
+        await db.Initiatives
+            .Include("_projectLinks")
+            .AsNoTracking()
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync(ct);
 
     public async Task<Initiative?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        await db.Initiatives.FindAsync([id], ct);
+        await db.Initiatives
+            .Include("_projectLinks")
+            .FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public async Task AddAsync(Initiative initiative, CancellationToken ct) =>
         await db.Initiatives.AddAsync(initiative, ct);

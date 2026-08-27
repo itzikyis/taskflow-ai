@@ -106,6 +106,10 @@ export const aiService = {
     );
     return data;
   },
+  askForecast: async (question: string): Promise<AskAiResponse> => {
+    const { data } = await axios.post<AskAiResponse>('/api/ai/ask', { question });
+    return data;
+  },
 };
 
 export interface SprintTaskSuggestion {
@@ -184,6 +188,10 @@ export interface DashboardInsightsDto {
   narrative: string;
   highlights: string[];
   healthStatus: string;
+}
+
+export interface AskAiResponse {
+  answer: string;
 }
 
 export interface StatusDigestDto {

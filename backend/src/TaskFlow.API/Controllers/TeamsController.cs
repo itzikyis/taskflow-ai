@@ -28,12 +28,20 @@ public sealed class TeamsController(IMediator mediator) : ControllerBase
         return Ok(result.Value);
     }
 
-    /// <summary>Gets workload data for all team members, optionally scoped to a project.</summary>
+    /// <summary>Gets workload and capacity data for all team members, scoped to a project.</summary>
+    /// <param name="projectId">The project identifier.</param>
+    /// <param name="capacityHoursPerWeek">Weekly capacity ceiling per member in hours (defaults to 40).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("workload/{projectId:guid}")]
     [ProducesResponseType(typeof(TeamWorkloadDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetWorkload(Guid projectId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetWorkload(
+        Guid projectId,
+        [FromQuery] double capacityHoursPerWeek = 40,
+        CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetTeamWorkloadQuery(projectId), cancellationToken);
+        var result = await mediator.Send(
+            new GetTeamWorkloadQuery(projectId, capacityHoursPerWeek),
+            cancellationToken);
         return result.IsFailure ? BadRequest(result.Error) : Ok(result.Value);
     }
 

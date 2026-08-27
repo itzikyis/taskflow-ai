@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import {
@@ -12,14 +12,15 @@ import {
 
 const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   TaskStatusChanged:   'Task status changes to',
-  TaskCreated:         'A task is created',
+  TaskCreated:         'A new task is created',
   TaskPriorityChanged: 'Task priority changes to',
 };
 
 const ACTION_LABELS: Record<AutomationActionType, string> = {
-  SendNotification: 'Send notification',
-  PostComment:      'Post a comment',
+  SendNotification: 'Send in-app notification',
+  PostComment:      'Add comment',
   ChangeStatus:     'Change status to',
+  AssignTask:       'Assign task to',
 };
 
 const STATUS_OPTIONS = ['Todo', 'InProgress', 'Review', 'Done', 'Blocked'];
@@ -33,6 +34,7 @@ const ACTION_OPTIONS: AutomationActionType[] = [
   'SendNotification',
   'PostComment',
   'ChangeStatus',
+  'AssignTask',
 ];
 
 function triggerValueOptions(trigger: AutomationTriggerType): string[] {
@@ -44,7 +46,69 @@ function triggerValueOptions(trigger: AutomationTriggerType): string[] {
 function actionValuePlaceholder(action: AutomationActionType): string {
   if (action === 'SendNotification') return 'Notification message (use {task} for task title)';
   if (action === 'PostComment') return 'Comment text (use {task} for task title)';
+  if (action === 'AssignTask') return 'Assignee name or user ID';
   return '';
+}
+
+function actionNeedsTextInput(action: AutomationActionType): boolean {
+  return action === 'SendNotification' || action === 'PostComment' || action === 'AssignTask';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+interface ToastMessage {
+  id: number;
+  text: string;
+}
+
+interface ToastProps {
+  messages: ToastMessage[];
+}
+
+function Toast({ messages }: ToastProps) {
+  if (messages.length === 0) return null;
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 28,
+      right: 28,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      zIndex: 9999,
+      pointerEvents: 'none',
+    }}>
+      {messages.map(m => (
+        <div key={m.id} style={{
+          background: 'var(--color-primary, #6366f1)',
+          color: '#fff',
+          borderRadius: 10,
+          padding: '10px 18px',
+          fontSize: 13,
+          fontWeight: 500,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+          maxWidth: 340,
+          wordBreak: 'break-word',
+        }}>
+          {m.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function useToast() {
+  const [messages, setMessages] = useState<ToastMessage[]>([]);
+  let nextId = 0;
+
+  const show = useCallback((text: string, durationMs = 3000) => {
+    const id = ++nextId;
+    setMessages(prev => [...prev, { id, text }]);
+    setTimeout(() => setMessages(prev => prev.filter(m => m.id !== id)), durationMs);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { messages, show };
 }
 
 // ── Rule card ────────────────────────────────────────────────────────────────
@@ -53,16 +117,29 @@ interface RuleCardProps {
   rule: AutomationRuleDto;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
+  onTest: (rule: AutomationRuleDto) => void;
 }
 
-function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
+function RuleCard({ rule, onToggle, onDelete, onTest }: RuleCardProps) {
   const triggerLabel = TRIGGER_LABELS[rule.triggerType];
   const actionLabel  = ACTION_LABELS[rule.actionType];
 
+  const actionSummary = (() => {
+    if (rule.actionType === 'ChangeStatus') return `${actionLabel} "${rule.actionValue}"`;
+    if (rule.actionType === 'AssignTask') return `${actionLabel} "${rule.actionValue}"`;
+    if (rule.actionValue) {
+      const preview = rule.actionValue.length > 50
+        ? rule.actionValue.slice(0, 50) + '…'
+        : rule.actionValue;
+      return `${actionLabel} — "${preview}"`;
+    }
+    return actionLabel;
+  })();
+
   return (
     <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border-default)',
+      background: 'var(--surface-card, var(--bg-card))',
+      border: '1px solid var(--surface-border, var(--border-default))',
       borderRadius: 10,
       padding: '16px 20px',
       display: 'flex',
@@ -81,7 +158,7 @@ function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
           width: 38,
           height: 22,
           borderRadius: 11,
-          background: rule.isEnabled ? 'var(--color-primary, #6366f1)' : 'var(--border-default)',
+          background: rule.isEnabled ? 'var(--color-primary, #6366f1)' : 'var(--surface-border, var(--border-default))',
           position: 'relative',
           transition: 'background 0.2s',
         }}>
@@ -112,14 +189,37 @@ function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
           <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: 5, padding: '2px 8px', fontWeight: 500 }}>
             THEN
           </span>
-          <span>{actionLabel}{rule.actionValue && rule.actionType !== 'ChangeStatus' ? '' : rule.actionType === 'ChangeStatus' ? ` "${rule.actionValue}"` : ''}</span>
-          {rule.actionType !== 'ChangeStatus' && rule.actionValue && (
-            <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              — "{rule.actionValue.length > 50 ? rule.actionValue.slice(0, 50) + '…' : rule.actionValue}"
-            </span>
-          )}
+          <span>{actionSummary}</span>
         </div>
       </div>
+
+      {/* Test button */}
+      <button
+        type="button"
+        onClick={() => onTest(rule)}
+        title="Simulate rule trigger"
+        style={{
+          background: 'none',
+          border: '1px solid var(--surface-border, var(--border-default))',
+          cursor: 'pointer',
+          color: 'var(--text-secondary)',
+          fontSize: 12,
+          padding: '4px 10px',
+          borderRadius: 6,
+          flexShrink: 0,
+          fontWeight: 500,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+          e.currentTarget.style.color = 'var(--color-primary, #6366f1)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = 'var(--surface-border, var(--border-default))';
+          e.currentTarget.style.color = 'var(--text-secondary)';
+        }}
+      >
+        Test
+      </button>
 
       {/* Delete */}
       <button
@@ -136,7 +236,7 @@ function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
           borderRadius: 6,
           flexShrink: 0,
         }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-danger, #ef4444)')}
         onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
       >
         🗑
@@ -172,15 +272,15 @@ function NewRuleForm({ projectId, onCreated, onCancel }: NewRuleFormProps) {
   });
 
   const tvOptions = triggerValueOptions(triggerType);
-  const needsValue = triggerType !== 'TaskCreated';
-  const needsActionValue = actionType !== 'ChangeStatus';
+  const needsTriggerValue = triggerType !== 'TaskCreated';
+  const needsTextInput = actionNeedsTextInput(actionType);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!name.trim()) { setError('Rule name is required.'); return; }
-    if (needsValue && !triggerValue) { setError('Trigger value is required.'); return; }
-    if (needsActionValue && !actionValue.trim()) { setError('Action message is required.'); return; }
+    if (needsTriggerValue && !triggerValue) { setError('Trigger value is required.'); return; }
+    if (needsTextInput && !actionValue.trim()) { setError('Action value is required.'); return; }
     if (actionType === 'ChangeStatus' && !actionValue) { setError('Target status is required.'); return; }
     try { await mutateAsync(); }
     catch { setError('Failed to create rule. Please try again.'); }
@@ -188,7 +288,7 @@ function NewRuleForm({ projectId, onCreated, onCancel }: NewRuleFormProps) {
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'var(--bg-card)',
+      background: 'var(--surface-card, var(--bg-card))',
       border: '2px solid var(--color-primary, #6366f1)',
       borderRadius: 10,
       padding: '20px 24px',
@@ -236,7 +336,7 @@ function NewRuleForm({ projectId, onCreated, onCancel }: NewRuleFormProps) {
             </select>
           </label>
 
-          {needsValue && (
+          {needsTriggerValue && (
             <label style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, flex: 1, minWidth: 120 }}>
               Value
               <select
@@ -277,7 +377,7 @@ function NewRuleForm({ projectId, onCreated, onCancel }: NewRuleFormProps) {
           </label>
 
           <label style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, flex: 2, minWidth: 200 }}>
-            {actionType === 'ChangeStatus' ? 'Target status' : 'Message'}
+            {actionType === 'ChangeStatus' ? 'Target status' : actionType === 'AssignTask' ? 'Assignee' : 'Message'}
             {actionType === 'ChangeStatus' ? (
               <select
                 value={actionValue}
@@ -300,7 +400,7 @@ function NewRuleForm({ projectId, onCreated, onCancel }: NewRuleFormProps) {
         </div>
 
         {error && (
-          <div style={{ color: '#ef4444', fontSize: 13 }}>{error}</div>
+          <div style={{ color: 'var(--color-danger, #ef4444)', fontSize: 13 }}>{error}</div>
         )}
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
@@ -323,6 +423,7 @@ export function AutomationsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [showForm, setShowForm] = useState(false);
   const qc = useQueryClient();
+  const { messages: toasts, show: showToast } = useToast();
 
   const projectId = selectedProjectId || (projects[0]?.id ?? '');
 
@@ -343,7 +444,14 @@ export function AutomationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['automations', projectId] }),
   });
 
-  const isLoading = projectsLoading || rulesLoading;
+  function handleTest(rule: AutomationRuleDto) {
+    const triggerLabel = TRIGGER_LABELS[rule.triggerType];
+    const actionLabel  = ACTION_LABELS[rule.actionType];
+    const triggerDesc  = rule.triggerValue ? `${triggerLabel} "${rule.triggerValue}"` : triggerLabel;
+    showToast(`⚡ "${rule.name}" would trigger: ${triggerDesc} → ${actionLabel}`);
+  }
+
+  const isLoading     = projectsLoading || rulesLoading;
   const enabledCount  = rules.filter(r => r.isEnabled).length;
   const disabledCount = rules.length - enabledCount;
 
@@ -394,9 +502,9 @@ export function AutomationsPage() {
       {rules.length > 0 && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
           {[
-            { label: 'Total Rules',    value: rules.length,   bg: '#f0f4ff', color: '#3730a3' },
-            { label: 'Active',         value: enabledCount,   bg: '#ecfdf5', color: '#065f46' },
-            { label: 'Paused',         value: disabledCount,  bg: '#f9fafb', color: '#6b7280' },
+            { label: 'Total Rules', value: rules.length,   bg: '#f0f4ff', color: '#3730a3' },
+            { label: 'Active',      value: enabledCount,   bg: '#ecfdf5', color: '#065f46' },
+            { label: 'Paused',      value: disabledCount,  bg: '#f9fafb', color: '#6b7280' },
           ].map(s => (
             <div key={s.label} style={{
               background: s.bg, borderRadius: 10,
@@ -444,10 +552,14 @@ export function AutomationsPage() {
               rule={rule}
               onToggle={(id, isEnabled) => toggleMutation.mutate({ id, isEnabled })}
               onDelete={id => deleteMutation.mutate(id)}
+              onTest={handleTest}
             />
           ))}
         </div>
       )}
+
+      {/* Toast notifications */}
+      <Toast messages={toasts} />
     </div>
   );
 }

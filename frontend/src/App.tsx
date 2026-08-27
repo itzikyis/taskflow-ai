@@ -32,8 +32,9 @@ import { TaskTemplatesPage } from '@/features/tasks/components/TaskTemplatesPage
 import { CalendarPage } from '@/features/calendar/components/CalendarPage';
 import { GuestPortalPage } from '@/features/guest-portal/components/GuestPortalPage';
 import { TeamAnalyticsPage } from '@/features/reporting/components/TeamAnalyticsPage';
+import { AiUsageDashboardPage } from '@/features/ai/components/AiUsageDashboardPage';
 
-type View = 'tasks' | 'timeline' | 'calendar' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'ask-taskflow' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics' | 'goals' | 'task-templates' | 'guest-portal' | 'team-analytics';
+type View = 'tasks' | 'timeline' | 'calendar' | 'dashboard' | 'projects' | 'teams' | 'activity' | 'audit' | 'sprint-planner' | 'release-notes' | 'retrospective' | 'integrations' | 'risk-detection' | 'meeting-notes' | 'copilot' | 'ask-taskflow' | 'automations' | 'initiatives' | 'project-docs' | 'timesheet' | 'workload' | 'status-digest' | 'analytics' | 'goals' | 'task-templates' | 'guest-portal' | 'team-analytics' | 'ai-usage';
 type AuthView = 'login' | 'register';
 
 const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
@@ -64,6 +65,7 @@ const NAV_ITEMS: { id: View; icon: string; label: string }[] = [
   { id: 'task-templates', icon: '📋', label: 'Task Templates' },
   { id: 'guest-portal',     icon: '🔗', label: 'Guest Portal'    },
   { id: 'team-analytics',  icon: '📊', label: 'Team Analytics'  },
+  { id: 'ai-usage',       icon: '🤖', label: 'AI Usage'        },
 ];
 
 export default function App() {
@@ -158,7 +160,7 @@ export default function App() {
       <div className="app-main">
         <header className="app-topbar">
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'calendar' ? 'Calendar' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : view === 'task-templates' ? 'Task Templates' : view === 'guest-portal' ? 'Guest Portal' : view === 'team-analytics' ? 'Team Analytics' : 'Retrospective'}
+            {view === 'tasks' ? 'My Tasks' : view === 'timeline' ? 'Timeline' : view === 'calendar' ? 'Calendar' : view === 'dashboard' ? 'Dashboard' : view === 'projects' ? 'Projects' : view === 'teams' ? 'Teams' : view === 'activity' ? 'Activity Log' : view === 'audit' ? 'Audit Trail' : view === 'sprint-planner' ? 'Sprint Planner' : view === 'release-notes' ? 'Release Notes' : view === 'integrations' ? 'Integrations' : view === 'risk-detection' ? 'AI Risk Scan' : view === 'meeting-notes' ? 'Meeting Notes' : view === 'copilot' ? 'AI Copilot' : view === 'ask-taskflow' ? 'Ask TaskFlow' : view === 'automations' ? 'Automations' : view === 'initiatives' ? 'Initiatives & Roadmap' : view === 'project-docs' ? 'Project Docs' : view === 'timesheet' ? 'Timesheets' : view === 'workload' ? 'Team Workload' : view === 'status-digest' ? 'Status Digest' : view === 'analytics' ? 'Analytics' : view === 'goals' ? 'Goals & OKRs' : view === 'task-templates' ? 'Task Templates' : view === 'guest-portal' ? 'Guest Portal' : view === 'team-analytics' ? 'Team Analytics' : view === 'ai-usage' ? 'AI Usage' : 'Retrospective'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
@@ -229,6 +231,7 @@ export default function App() {
           {view === 'task-templates' && <TaskTemplatesPage />}
           {view === 'guest-portal'   && <GuestPortalPage />}
           {view === 'team-analytics' && <TeamAnalyticsPage />}
+          {view === 'ai-usage'       && <AiUsageDashboardPage />}
         </main>
       </div>
     </div>

@@ -10,11 +10,17 @@ export interface MemberWorkloadDto {
   inProgressTasks: number;
   completedTasks: number;
   totalAssigned: number;
+  capacityHoursPerWeek: number;
+  loggedHoursThisWeek: number;
+  utilizationPercent: number;
+  overCapacity: boolean;
 }
 
 export interface TeamWorkloadDto {
   members: MemberWorkloadDto[];
   unassignedTasks: number;
+  totalCapacityHoursPerWeek: number;
+  totalLoggedHoursThisWeek: number;
 }
 
 export const teamService = {
@@ -53,8 +59,10 @@ export const teamService = {
     await axios.patch(`${BASE}/${teamId}/name`, { name });
   },
 
-  getTeamWorkload: async (projectId: string): Promise<TeamWorkloadDto> => {
-    const { data } = await axios.get<TeamWorkloadDto>(`${BASE}/workload/${projectId}`);
+  getTeamWorkload: async (projectId: string, capacityHoursPerWeek?: number): Promise<TeamWorkloadDto> => {
+    const { data } = await axios.get<TeamWorkloadDto>(`${BASE}/workload/${projectId}`, {
+      params: capacityHoursPerWeek !== undefined ? { capacityHoursPerWeek } : undefined,
+    });
     return data;
   },
 };

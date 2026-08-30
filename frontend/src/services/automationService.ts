@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export type AutomationTriggerType = 'TaskStatusChanged' | 'TaskCreated' | 'TaskPriorityChanged';
-export type AutomationActionType = 'SendNotification' | 'PostComment' | 'ChangeStatus';
+export type AutomationActionType = 'SendNotification' | 'PostComment' | 'ChangeStatus' | 'AssignTask';
 
 export interface AutomationRuleDto {
   id: string;

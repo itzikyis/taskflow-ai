@@ -6,6 +6,7 @@ import { StoryPointBadge } from '@/features/tasks/components/StoryPointBadge';
 import type { TaskStatus } from '@/features/tasks/types/task.types';
 import { TASK_STATUSES } from '@/features/tasks/types/task.types';
 import type { SprintPlan } from '@/services/aiService';
+import { ForecastingPanel } from './ForecastingPanel';
 
 const DEFAULT_CAPACITY = 40;
 const NON_DONE_STATUSES: TaskStatus[] = TASK_STATUSES.filter(s => s !== 'Done');
@@ -233,6 +234,8 @@ export function SprintPlannerPage() {
           )}
         </section>
       </div>
+
+      <ForecastingPanel />
     </div>
   );
 }

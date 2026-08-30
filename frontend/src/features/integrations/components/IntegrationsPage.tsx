@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { SlackSettings } from './SlackSettings';
+import { CiCdStatusPage } from './CiCdStatusPage';
 
 const panel = {
   background: 'var(--surface-bg)',
@@ -10,9 +11,37 @@ const panel = {
   maxWidth: 720,
 };
 
+type PipelineMiniStatus = 'passing' | 'failing' | 'running';
+
+interface MiniPipelineRun {
+  id: string;
+  name: string;
+  status: PipelineMiniStatus;
+  ago: string;
+}
+
+const MINI_RUNS: MiniPipelineRun[] = [
+  { id: 'r1', name: 'Frontend Build',    status: 'passing', ago: '2h ago'  },
+  { id: 'r2', name: 'Backend Tests',     status: 'failing', ago: '30m ago' },
+  { id: 'r3', name: 'Deploy to Staging', status: 'running', ago: 'Now'     },
+];
+
+const MINI_STATUS_ICON: Record<PipelineMiniStatus, string> = {
+  passing: '✅',
+  failing: '❌',
+  running: '🔄',
+};
+
+const MINI_STATUS_COLOR: Record<PipelineMiniStatus, string> = {
+  passing: '#22c55e',
+  failing: '#ef4444',
+  running: '#f59e0b',
+};
+
 export function IntegrationsPage() {
   const { token } = useAuthStore();
   const [copied, setCopied] = useState(false);
+  const [showCiCd, setShowCiCd] = useState(false);
 
   const feedUrl = token?.userId
     ? `${window.location.origin}/api/calendar/feed/${token.userId}.ics`
@@ -65,6 +94,69 @@ export function IntegrationsPage() {
           Direct Google/Microsoft 365 OAuth with rescheduling that flows back into TaskFlow is planned.
           The read-only feed above works with every major calendar app today, no sign-in required.
         </p>
+      </div>
+
+      {/* CI/CD Status section */}
+      <div style={{ ...panel, marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 16 }}>CI/CD Status ⚙️</h3>
+          <button
+            type="button"
+            className="tf-btn tf-btn-sm"
+            onClick={() => setShowCiCd(prev => !prev)}
+            style={{ fontSize: 12 }}
+          >
+            {showCiCd ? 'Hide panel ▲' : 'View all CI/CD status →'}
+          </button>
+        </div>
+
+        {/* Summary strip */}
+        <div style={{
+          display: 'flex',
+          gap: 16,
+          padding: '8px 12px',
+          background: 'var(--surface-card)',
+          border: '1px solid var(--surface-border)',
+          borderRadius: 6,
+          marginBottom: 12,
+          fontSize: 13,
+          color: 'var(--text-secondary)',
+          flexWrap: 'wrap',
+        }}>
+          <span>🔗 3 pipelines connected</span>
+          <span style={{ color: '#22c55e' }}>✅ 2 passing</span>
+          <span style={{ color: '#ef4444' }}>❌ 1 failing</span>
+        </div>
+
+        {/* Mini run list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {MINI_RUNS.map(run => (
+            <div
+              key={run.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '7px 10px',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--surface-border)',
+                borderLeft: `3px solid ${MINI_STATUS_COLOR[run.status]}`,
+                borderRadius: 6,
+                fontSize: 13,
+              }}
+            >
+              <span>{MINI_STATUS_ICON[run.status]}</span>
+              <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{run.ago}</span>
+            </div>
+          ))}
+        </div>
+
+        {showCiCd && (
+          <div style={{ marginTop: 20 }}>
+            <CiCdStatusPage />
+          </div>
+        )}
       </div>
     </div>
   );

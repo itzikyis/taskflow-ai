@@ -12,6 +12,7 @@ namespace TaskFlow.Application.AI.Queries.GetStatusDigest;
 /// </summary>
 public sealed class GetStatusDigestQueryHandler(
     ITaskRepository taskRepository,
+    IProjectRepository projectRepository,
     IAiAssistantService ai,
     ILogger<GetStatusDigestQueryHandler> logger)
     : IRequestHandler<GetStatusDigestQuery, Result<StatusDigestDto>>
@@ -19,6 +20,10 @@ public sealed class GetStatusDigestQueryHandler(
     /// <inheritdoc/>
     public async Task<Result<StatusDigestDto>> Handle(GetStatusDigestQuery request, CancellationToken ct)
     {
+        var project = await projectRepository.GetByIdAsync(request.ProjectId, ct);
+        if (project is null)
+            return Result<StatusDigestDto>.Failure(ProjectErrors.NotFound);
+
         var tasks = await taskRepository.GetByProjectIdAsync(request.ProjectId, ct);
 
         var cutoff = DateTime.UtcNow.AddDays(-request.PeriodDays);

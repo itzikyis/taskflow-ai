@@ -21,8 +21,9 @@ public sealed class ClaudeAiAssistantService : IAiAssistantService
     public ClaudeAiAssistantService(HttpClient http, IConfiguration configuration)
     {
         _http = http;
-        var apiKey = configuration["Anthropic:ApiKey"]
-            ?? throw new InvalidOperationException("Anthropic API key not configured. Set the Anthropic__ApiKey environment variable.");
+        var apiKey = configuration["Anthropic:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("Anthropic API key is not configured. Set the Anthropic:ApiKey configuration value.");
         _model = configuration["Anthropic:Model"] ?? "claude-haiku-4-5-20251001";
         _http.BaseAddress = new Uri("https://api.anthropic.com");
         _http.DefaultRequestHeaders.Add("x-api-key", apiKey);

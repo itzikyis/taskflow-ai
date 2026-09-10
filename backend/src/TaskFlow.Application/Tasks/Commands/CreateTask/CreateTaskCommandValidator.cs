@@ -16,5 +16,9 @@ public sealed class CreateTaskCommandValidator : AbstractValidator<CreateTaskCom
 
         RuleFor(x => x.Priority)
             .IsInEnum().WithMessage("Priority must be a valid value (Low, Medium, High, or Critical).");
+
+        RuleFor(x => x.Description)
+            .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters.")
+            .When(x => x.Description != null);
     }
 }

@@ -10,6 +10,7 @@ namespace TaskFlow.Application.AI.Queries.GetDashboardInsights;
 /// <summary>Handles <see cref="GetDashboardInsightsQuery"/> by computing dashboard metrics and delegating narrative generation to the AI assistant.</summary>
 public sealed class GetDashboardInsightsQueryHandler(
     ITaskRepository taskRepository,
+    IProjectRepository projectRepository,
     IAiAssistantService ai,
     ILogger<GetDashboardInsightsQueryHandler> logger)
     : IRequestHandler<GetDashboardInsightsQuery, Result<DashboardInsightsDto>>
@@ -17,6 +18,10 @@ public sealed class GetDashboardInsightsQueryHandler(
     /// <inheritdoc/>
     public async Task<Result<DashboardInsightsDto>> Handle(GetDashboardInsightsQuery request, CancellationToken ct)
     {
+        var project = await projectRepository.GetByIdAsync(request.ProjectId, ct);
+        if (project is null)
+            return Result<DashboardInsightsDto>.Failure(ProjectErrors.NotFound);
+
         var tasks = await taskRepository.GetByProjectIdAsync(request.ProjectId, ct);
 
         var now = DateTime.UtcNow;
